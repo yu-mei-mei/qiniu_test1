@@ -4,11 +4,12 @@ AI 语音绘图工具 - 后端入口
 """
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from .asr import transcribe_audio
 from .command_parser import parse_command
 
 app = FastAPI(title="AI 语音绘图工具")
@@ -36,6 +37,27 @@ async def health_check():
 async def parse_instruction(req: ParseRequest):
     """将自然语言指令解析为结构化绘图命令"""
     result = parse_command(req.text)
+    return result
+
+
+@app.post("/api/voice")
+async def parse_voice(file: UploadFile = File(...)):
+    """将浏览器录音转写为文字，并解析为结构化绘图命令。"""
+    audio_bytes = await file.read()
+    suffix = Path(file.filename or "voice.webm").suffix or ".webm"
+    asr_result = transcribe_audio(audio_bytes, suffix=suffix)
+    text = (asr_result.get("text") or "").strip()
+
+    if not text:
+        return {
+            "text": "",
+            "commands": [],
+            "tts": asr_result.get("message", "没有听清楚，请再说一遍"),
+            "error": asr_result.get("error", "empty_transcript"),
+        }
+
+    result = parse_command(text)
+    result["text"] = text
     return result
 
 
