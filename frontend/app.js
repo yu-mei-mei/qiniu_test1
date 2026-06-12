@@ -1,15 +1,15 @@
 /**
  * AI 语音绘图工具 - 应用逻辑
- * Web Speech API 语音识别集成
+ * Web Speech API 语音识别 + 后端通信 + 绘图引擎集成
  */
 
 class VoiceController {
     constructor() {
         this.recognition = null;
         this.isListening = false;
-        this.isFinal = false;
+        this.isProcessing = false; // 正在处理指令时忽略新的识别
         this.restartTimeout = null;
-        this.onFinalTranscript = null; // 回调：最终识别结果
+        this.onCommand = null;      // 回调：收到完整指令文本
 
         this._initElements();
         this._initRecognition();
@@ -33,29 +33,22 @@ class VoiceController {
 
         this.recognition = new SpeechRecognition();
         this.recognition.lang = 'zh-CN';
-        this.recognition.continuous = true;      // 持续监听
-        this.recognition.interimResults = true;  // 返回中间结果
+        this.recognition.continuous = true;
+        this.recognition.interimResults = true;
         this.recognition.maxAlternatives = 1;
 
-        // 绑定事件
         this.recognition.onstart = () => this._onStart();
         this.recognition.onresult = (e) => this._onResult(e);
         this.recognition.onerror = (e) => this._onError(e);
         this.recognition.onend = () => this._onEnd();
 
-        // 自动开始监听
         this.start();
     }
 
     /** 开始监听 */
     start() {
         if (!this.recognition) return;
-        try {
-            this.recognition.start();
-        } catch (e) {
-            // 避免重复启动报错
-            console.warn('语音启动:', e.message);
-        }
+        try { this.recognition.start(); } catch (_) {}
     }
 
     /** 停止监听 */
@@ -69,13 +62,11 @@ class VoiceController {
         this._setStatus('idle', '🎤', '语音识别已停止');
     }
 
-    /** 监听启动 */
     _onStart() {
         this.isListening = true;
         this._setStatus('listening', '🎤', '正在聆听...');
     }
 
-    /** 收到识别结果 */
     _onResult(event) {
         let interimText = '';
         let finalText = '';
@@ -89,24 +80,22 @@ class VoiceController {
             }
         }
 
-        // 显示识别文字
         this._displayTranscript(finalText, interimText);
 
-        // 有最终结果时触发回调
-        if (finalText && this.onFinalTranscript) {
+        // 有最终结果且不在处理中时触发
+        if (finalText && !this.isProcessing && this.onCommand) {
             const text = finalText.trim();
             if (text) {
-                this._addHistory(text);
-                this.onFinalTranscript(text);
+                this.isProcessing = true;
+                this._setStatus('listening', '⏳', '正在处理指令...');
+                this.onCommand(text);
             }
         }
     }
 
-    /** 识别出错 */
     _onError(event) {
         console.warn('语音识别错误:', event.error);
-
-        const errorMessages = {
+        const messages = {
             'not-allowed': '麦克风权限被拒绝，请在浏览器设置中允许',
             'no-speech': '未检测到语音',
             'audio-capture': '未找到麦克风设备',
@@ -114,27 +103,22 @@ class VoiceController {
             'aborted': '识别已中断',
             'service-not-allowed': '语音服务不可用',
         };
-
-        const msg = errorMessages[event.error] || `识别出错: ${event.error}`;
+        const msg = messages[event.error] || `识别出错: ${event.error}`;
         this._setStatus('error', '⚠️', msg);
         this.isListening = false;
 
-        // 非致命错误自动重启
         if (!['not-allowed', 'service-not-allowed'].includes(event.error)) {
             this._scheduleRestart();
         }
     }
 
-    /** 监听结束（可能自动停止） */
     _onEnd() {
         this.isListening = false;
-        // 如果没出错，自动重启保持持续监听
         if (this.recognition) {
             this._scheduleRestart();
         }
     }
 
-    /** 延迟重启语音识别 */
     _scheduleRestart() {
         if (this.restartTimeout) return;
         this.restartTimeout = setTimeout(() => {
@@ -144,6 +128,14 @@ class VoiceController {
                 this.start();
             }
         }, 300);
+    }
+
+    /** 设置处理完成，恢复监听状态 */
+    setProcessingDone() {
+        this.isProcessing = false;
+        if (this.isListening) {
+            this._setStatus('listening', '🎤', '正在聆听...');
+        }
     }
 
     /** 更新状态显示 */
@@ -157,32 +149,24 @@ class VoiceController {
     /** 显示识别文字 */
     _displayTranscript(final, interim) {
         let html = '';
-        if (final) {
-            html += `<span class="final">${this._escapeHtml(final)}</span>`;
-        }
-        if (interim) {
-            html += `<span class="interim">${this._escapeHtml(interim)}</span>`;
-        }
-        if (!final && !interim) {
-            html = '<span class="placeholder">🎤 说话后这里会显示识别文字...</span>';
-        }
+        if (final) html += `<span class="final">${this._escapeHtml(final)}</span>`;
+        if (interim) html += `<span class="interim">${this._escapeHtml(interim)}</span>`;
+        if (!final && !interim) html = '<span class="placeholder">🎤 说话后这里会显示识别文字...</span>';
         this.transcriptArea.innerHTML = html;
         this.transcriptArea.scrollTop = this.transcriptArea.scrollHeight;
     }
 
     /** 添加历史记录 */
-    _addHistory(text) {
+    addHistory(text, status = '') {
         const now = new Date();
         const time = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
         const item = document.createElement('div');
         item.className = 'history-item';
-        item.innerHTML = `<span class="time">${time}</span>${this._escapeHtml(text)}`;
+        item.innerHTML = `<span class="time">${time}</span>${this._escapeHtml(text)} ${status}`;
         this.historyArea.appendChild(item);
         this.historyArea.scrollTop = this.historyArea.scrollHeight;
     }
 
-    /** HTML 转义 */
     _escapeHtml(str) {
         const div = document.createElement('div');
         div.textContent = str;
@@ -190,15 +174,96 @@ class VoiceController {
     }
 }
 
+
+// ===== 后端通信 & 指令执行 =====
+
+class CommandClient {
+    constructor() {
+        this.apiUrl = '/api/parse';
+    }
+
+    /** 发送语音文本到后端，返回解析后的指令 */
+    async send(text) {
+        const response = await fetch(this.apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text }),
+        });
+        if (!response.ok) {
+            throw new Error(`服务器错误: ${response.status}`);
+        }
+        return response.json();
+    }
+}
+
+
 // ===== 启动 =====
+
 document.addEventListener('DOMContentLoaded', () => {
+    const drawer = new DrawEngine('drawCanvas');
+    const client = new CommandClient();
     const voice = new VoiceController();
 
-    voice.onFinalTranscript = (text) => {
-        // 后续 PR：将识别文字发送到后端解析绘图指令
-        console.log('🎤 识别结果:', text);
+    voice.onCommand = async (text) => {
+        try {
+            // 发送到后端解析
+            const result = await client.send(text);
+
+            // 执行绘图指令
+            if (result.commands && result.commands.length > 0) {
+                drawer.executeCommands(result.commands);
+                voice.addHistory(text, '✅');
+            } else {
+                // 无指令（闲聊等）
+                voice.addHistory(text, '💬');
+            }
+
+            // TTS 语音反馈
+            if (result.tts) {
+                speak(result.tts);
+            }
+        } catch (err) {
+            console.error('指令处理失败:', err);
+            voice.addHistory(text, '❌');
+            speak('抱歉，处理指令时出了点问题');
+        } finally {
+            voice.setProcessingDone();
+        }
     };
 
     // 暴露到全局以便调试
+    window.drawer = drawer;
     window.voiceController = voice;
+    window.commandClient = client;
 });
+
+
+/**
+ * 语音合成（TTS）
+ */
+function speak(text) {
+    if (!text || !window.speechSynthesis) return;
+    // 取消正在播放的语音
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'zh-CN';
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+
+    // 尝试选择中文语音
+    const voices = window.speechSynthesis.getVoices();
+    const zhVoice = voices.find(v => v.lang.startsWith('zh'));
+    if (zhVoice) utterance.voice = zhVoice;
+
+    window.speechSynthesis.speak(utterance);
+}
+
+// 预加载语音列表
+if (window.speechSynthesis) {
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+    };
+}

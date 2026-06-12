@@ -95,20 +95,31 @@ def parse_command(user_text: str) -> dict:
 
     try:
         response = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=1024,
+            model="claude-sonnet-4-6",
+            max_tokens=2048,
             system=SYSTEM_PROMPT,
             messages=[
                 {"role": "user", "content": user_text}
             ]
         )
 
-        # 找到 text 块（可能包含 thinking 块）
+        # 找到 text 块（响应可能包含 thinking 块 + text 块）
         content = ""
         for block in response.content:
+            block_type = getattr(block, 'type', None) or type(block).__name__
+            if 'text' in block_type.lower():
+                content = block.text
+                break
             if hasattr(block, 'text') and block.text:
                 content = block.text
                 break
+        if not content:
+            # 尝试任何有 text 属性的块
+            for block in response.content:
+                if hasattr(block, 'text'):
+                    content = block.text or ""
+                    if content:
+                        break
         if not content:
             raise ValueError("响应中没有文本内容")
 
@@ -132,10 +143,10 @@ def parse_command(user_text: str) -> dict:
     except json.JSONDecodeError as e:
         return {
             "commands": [],
-            "tts": f"抱歉，指令解析出错了: {str(e)}"
+            "tts": f"抱歉，指令解析出错了，请换个说法试试"
         }
     except Exception as e:
         return {
             "commands": [],
-            "tts": f"抱歉，处理指令时出错: {str(e)}"
+            "tts": f"抱歉，处理指令时出现了错误"
         }
