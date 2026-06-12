@@ -133,6 +133,168 @@ class DrawEngine {
         return this._commit('draw_text');
     }
 
+
+
+    // ===== 模板绘制 =====
+
+    drawTemplate(name) {
+        if (name === 'pikachu') {
+            return this._drawPikachuTemplate();
+        }
+        return false;
+    }
+
+    _drawPikachuTemplate() {
+        const ctx = this.ctx;
+        ctx.save();
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = '#2b2118';
+        ctx.lineWidth = 5;
+
+        const yellow = '#ffd928';
+        const shadowYellow = '#f3bd1b';
+        const red = '#f05a42';
+        const black = '#15120f';
+        const brown = '#7b4a25';
+
+        // Tail behind the body.
+        ctx.beginPath();
+        ctx.moveTo(570, 360);
+        ctx.lineTo(670, 306);
+        ctx.lineTo(636, 368);
+        ctx.lineTo(704, 372);
+        ctx.lineTo(610, 430);
+        ctx.closePath();
+        ctx.fillStyle = yellow;
+        ctx.strokeStyle = '#2b2118';
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(585, 383);
+        ctx.lineTo(622, 362);
+        ctx.lineTo(646, 381);
+        ctx.lineTo(602, 407);
+        ctx.closePath();
+        ctx.fillStyle = brown;
+        ctx.fill();
+
+        // Ears.
+        this._drawEar(318, 210, 246, 42, 405, 173, yellow, black);
+        this._drawEar(482, 173, 644, 42, 570, 210, yellow, black);
+
+        // Body.
+        ctx.beginPath();
+        ctx.ellipse(400, 400, 145, 130, 0, 0, Math.PI * 2);
+        ctx.fillStyle = yellow;
+        ctx.strokeStyle = '#2b2118';
+        ctx.lineWidth = 5;
+        ctx.fill();
+        ctx.stroke();
+
+        // Head.
+        ctx.beginPath();
+        ctx.ellipse(400, 265, 130, 108, 0, 0, Math.PI * 2);
+        ctx.fillStyle = yellow;
+        ctx.strokeStyle = '#2b2118';
+        ctx.fill();
+        ctx.stroke();
+
+        // Face cheeks.
+        this._fillCircle(300, 302, 31, red);
+        this._fillCircle(500, 302, 31, red);
+
+        // Eyes and highlights.
+        this._fillCircle(352, 238, 28, black);
+        this._fillCircle(448, 238, 28, black);
+        this._fillCircle(362, 228, 10, '#ffffff');
+        this._fillCircle(438, 228, 10, '#ffffff');
+
+        // Nose and mouth.
+        ctx.beginPath();
+        ctx.moveTo(400, 268);
+        ctx.lineTo(389, 282);
+        ctx.lineTo(411, 282);
+        ctx.closePath();
+        ctx.fillStyle = black;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(400, 284);
+        ctx.bezierCurveTo(382, 302, 355, 302, 342, 286);
+        ctx.moveTo(400, 284);
+        ctx.bezierCurveTo(418, 302, 445, 302, 458, 286);
+        ctx.strokeStyle = black;
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        // Arms.
+        ctx.beginPath();
+        ctx.moveTo(286, 378);
+        ctx.bezierCurveTo(240, 405, 244, 468, 300, 468);
+        ctx.strokeStyle = '#2b2118';
+        ctx.lineWidth = 5;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(514, 378);
+        ctx.bezierCurveTo(560, 405, 556, 468, 500, 468);
+        ctx.stroke();
+
+        // Belly shadow.
+        ctx.beginPath();
+        ctx.ellipse(400, 420, 88, 60, 0, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 246, 128, 0.42)';
+        ctx.fill();
+
+        // Feet.
+        ctx.beginPath();
+        ctx.ellipse(328, 520, 48, 22, -0.12, 0, Math.PI * 2);
+        ctx.ellipse(472, 520, 48, 22, 0.12, 0, Math.PI * 2);
+        ctx.fillStyle = shadowYellow;
+        ctx.strokeStyle = '#2b2118';
+        ctx.fill();
+        ctx.stroke();
+
+        // Subtle label for clarity.
+        ctx.font = '22px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = 'rgba(43, 33, 24, 0.75)';
+        ctx.fillText('Pikachu', 400, 570);
+
+        ctx.restore();
+        return this._commit('template_pikachu');
+    }
+
+    _drawEar(ax, ay, bx, by, cx, cy, fillColor, tipColor) {
+        const ctx = this.ctx;
+        ctx.beginPath();
+        ctx.moveTo(ax, ay);
+        ctx.quadraticCurveTo((ax + bx) / 2, by, cx, cy);
+        ctx.quadraticCurveTo((ax + cx) / 2, cy + 24, ax, ay);
+        ctx.closePath();
+        ctx.fillStyle = fillColor;
+        ctx.strokeStyle = '#2b2118';
+        ctx.lineWidth = 5;
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(bx, by);
+        ctx.quadraticCurveTo((bx + ax) / 2, by + 58, ax + (cx - ax) * 0.22, ay - 2);
+        ctx.quadraticCurveTo((bx + cx) / 2, by + 58, cx - (cx - ax) * 0.22, cy - 2);
+        ctx.closePath();
+        ctx.fillStyle = tipColor;
+        ctx.fill();
+    }
+
+    _fillCircle(x, y, radius, color) {
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, radius, 0, Math.PI * 2);
+        this.ctx.fillStyle = color;
+        this.ctx.fill();
+    }
+
     // ===== 样式控制 =====
 
     setStyle(params = {}) {
