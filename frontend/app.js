@@ -1,19 +1,25 @@
 /**
  * AI 语音绘图工具 - 应用逻辑
- * Web Speech API 语音识别 + 后端通信 + 绘图引擎集成 + UX 增强
+ * MediaRecorder 录音 + 后端语音识别 + 指令解析 + 绘图引擎集成 + UX 增强
  */
 
 class VoiceController {
     constructor() {
-        this.recognition = null;
+        this.stream = null;
+        this.audioContext = null;
+        this.source = null;
+        this.processor = null;
+        this.samples = [];
         this.isListening = false;
         this.isProcessing = false;
         this.restartTimeout = null;
-        this.onCommand = null;
+        this.onAudio = null;
         this.historyCount = 0;
+        this.segmentMs = 3200;
+        this.targetSampleRate = 16000;
 
         this._initElements();
-        this._initRecognition();
+        this._initRecorder();
     }
 
     _initElements() {
@@ -27,92 +33,139 @@ class VoiceController {
         this.redoInfoEl = document.getElementById('redoInfo');
     }
 
-    _initRecognition() {
-        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SR) {
-            this._setStatus('error', '❌', '浏览器不支持语音识别');
+    async _initRecorder() {
+        if (!navigator.mediaDevices?.getUserMedia || !window.AudioContext && !window.webkitAudioContext) {
+            this._setStatus('error', '❌', '浏览器不支持录音');
             return;
         }
-        this.recognition = new SR();
-        this.recognition.lang = 'zh-CN';
-        this.recognition.continuous = true;
-        this.recognition.interimResults = true;
-        this.recognition.maxAlternatives = 1;
 
-        this.recognition.onstart = () => {
-            this.isListening = true;
-            this._setStatus('listening', '🎤', '正在聆听...');
-        };
-        this.recognition.onresult = (e) => this._onResult(e);
-        this.recognition.onerror = (e) => this._onError(e);
-        this.recognition.onend = () => {
-            this.isListening = false;
-            if (this.recognition) this._scheduleRestart();
-        };
-        this.start();
+        try {
+            this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const AC = window.AudioContext || window.webkitAudioContext;
+            this.audioContext = new AC();
+            this.source = this.audioContext.createMediaStreamSource(this.stream);
+            this._setStatus('idle', '🎤', '准备录音...');
+            this.start();
+        } catch (err) {
+            console.warn('麦克风初始化失败:', err);
+            this._setStatus('error', '⚠️', '请允许麦克风权限');
+        }
     }
 
     start() {
-        if (!this.recognition) return;
-        try { this.recognition.start(); } catch (_) {}
+        if (!this.audioContext || this.isListening || this.isProcessing) return;
+
+        this.samples = [];
+        this.processor = this.audioContext.createScriptProcessor(4096, 1, 1);
+        this.processor.onaudioprocess = (event) => {
+            const input = event.inputBuffer.getChannelData(0);
+            this.samples.push(new Float32Array(input));
+        };
+        this.source.connect(this.processor);
+        this.processor.connect(this.audioContext.destination);
+        this.isListening = true;
+        this._setStatus('listening', '🎤', '正在聆听...');
+        setTimeout(() => this.stop(), this.segmentMs);
     }
 
     stop() {
-        if (this.restartTimeout) { clearTimeout(this.restartTimeout); this.restartTimeout = null; }
+        if (!this.isListening) return;
         this.isListening = false;
-        try { this.recognition?.stop(); } catch (_) {}
-        this._setStatus('idle', '🎤', '已停止');
-    }
-
-    _onResult(event) {
-        let interim = '', final = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-            const r = event.results[i];
-            if (r.isFinal) final += r[0].transcript;
-            else interim += r[0].transcript;
+        if (this.processor) {
+            this.processor.disconnect();
+            this.processor.onaudioprocess = null;
+            this.processor = null;
         }
-        this._displayTranscript(final, interim);
-        if (final && !this.isProcessing && this.onCommand) {
-            const text = final.trim();
-            if (text) {
-                this.isProcessing = true;
-                this._setStatus('listening', '⏳', '正在处理...');
-                this.onCommand(text);
-            }
-        }
-    }
 
-    _onError(event) {
-        console.warn('语音识别错误:', event.error);
-        const msgs = {
-            'not-allowed': '请允许麦克风权限',
-            'no-speech': '未检测到语音',
-            'audio-capture': '未找到麦克风',
-            'network': '网络异常',
-            'aborted': '已中断',
-            'service-not-allowed': '服务不可用',
-        };
-        this._setStatus('error', '⚠️', msgs[event.error] || event.error);
-        this.isListening = false;
-        if (!['not-allowed', 'service-not-allowed'].includes(event.error)) {
+        if (this.samples.length > 0 && !this.isProcessing && this.onAudio) {
+            const wav = this._encodeWav(this.samples, this.audioContext.sampleRate, this.targetSampleRate);
+            this._handleAudio(wav);
+        } else {
             this._scheduleRestart();
         }
     }
 
+    async _handleAudio(blob) {
+        this.isProcessing = true;
+        this._setStatus('listening', '⏳', '正在识别...');
+        try {
+            await this.onAudio(blob);
+        } finally {
+            this.setProcessingDone();
+        }
+    }
+
+    _encodeWav(chunks, sourceRate, targetRate) {
+        const samples = this._mergeSamples(chunks);
+        const resampled = this._resample(samples, sourceRate, targetRate);
+        const buffer = new ArrayBuffer(44 + resampled.length * 2);
+        const view = new DataView(buffer);
+        this._writeString(view, 0, 'RIFF');
+        view.setUint32(4, 36 + resampled.length * 2, true);
+        this._writeString(view, 8, 'WAVE');
+        this._writeString(view, 12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, 1, true);
+        view.setUint32(24, targetRate, true);
+        view.setUint32(28, targetRate * 2, true);
+        view.setUint16(32, 2, true);
+        view.setUint16(34, 16, true);
+        this._writeString(view, 36, 'data');
+        view.setUint32(40, resampled.length * 2, true);
+
+        let offset = 44;
+        for (const sample of resampled) {
+            const clamped = Math.max(-1, Math.min(1, sample));
+            view.setInt16(offset, clamped < 0 ? clamped * 0x8000 : clamped * 0x7fff, true);
+            offset += 2;
+        }
+        return new Blob([buffer], { type: 'audio/wav' });
+    }
+
+    _mergeSamples(chunks) {
+        const length = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+        const result = new Float32Array(length);
+        let offset = 0;
+        for (const chunk of chunks) {
+            result.set(chunk, offset);
+            offset += chunk.length;
+        }
+        return result;
+    }
+
+    _resample(samples, sourceRate, targetRate) {
+        if (sourceRate === targetRate) return samples;
+        const ratio = sourceRate / targetRate;
+        const length = Math.round(samples.length / ratio);
+        const result = new Float32Array(length);
+        for (let i = 0; i < length; i++) {
+            const index = i * ratio;
+            const left = Math.floor(index);
+            const right = Math.min(left + 1, samples.length - 1);
+            const weight = index - left;
+            result[i] = samples[left] * (1 - weight) + samples[right] * weight;
+        }
+        return result;
+    }
+
+    _writeString(view, offset, text) {
+        for (let i = 0; i < text.length; i++) {
+            view.setUint8(offset + i, text.charCodeAt(i));
+        }
+    }
+
     _scheduleRestart() {
-        if (this.restartTimeout) return;
+        if (this.restartTimeout || this.isProcessing) return;
         this.restartTimeout = setTimeout(() => {
             this.restartTimeout = null;
-            if (!this.isListening && this.recognition) {
-                this._setStatus('idle', '🎤', '重新连接...');
-                this.start();
-            }
-        }, 300);
+            this.start();
+        }, 250);
     }
 
     setProcessingDone() {
         this.isProcessing = false;
-        if (this.isListening) this._setStatus('listening', '🎤', '正在聆听...');
+        this._scheduleRestart();
     }
 
     _setStatus(type, icon, text) {
@@ -120,13 +173,12 @@ class VoiceController {
         if (this.statusText) { this.statusText.className = `status-text ${type}`; this.statusText.textContent = text; }
     }
 
-    _displayTranscript(final, interim) {
+    displayTranscript(text) {
         if (!this.transcriptArea) return;
-        let html = '';
-        if (final) html += `<span class="final">${this._escapeHtml(final)}</span>`;
-        if (interim) html += ` <span class="interim">${this._escapeHtml(interim)}</span>`;
-        if (!final && !interim) html = '<span class="placeholder">🎤 说话后这里会显示识别文字...</span>';
-        this.transcriptArea.innerHTML = html;
+        const safeText = this._escapeHtml(text || '');
+        this.transcriptArea.innerHTML = safeText
+            ? `<span class="final">${safeText}</span>`
+            : '<span class="placeholder">🎤 正在等待语音指令...</span>';
         this.transcriptArea.scrollTop = this.transcriptArea.scrollHeight;
     }
 
@@ -161,15 +213,24 @@ class VoiceController {
 
 class CommandClient {
     constructor() {
-        this.apiUrl = '/api/parse';
+        this.parseUrl = '/api/parse';
+        this.voiceUrl = '/api/voice';
     }
 
     async send(text) {
-        const res = await fetch(this.apiUrl, {
+        const res = await fetch(this.parseUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text }),
         });
+        if (!res.ok) throw new Error(`服务器错误: ${res.status}`);
+        return res.json();
+    }
+
+    async sendAudio(blob) {
+        const form = new FormData();
+        form.append('file', blob, 'voice.wav');
+        const res = await fetch(this.voiceUrl, { method: 'POST', body: form });
         if (!res.ok) throw new Error(`服务器错误: ${res.status}`);
         return res.json();
     }
@@ -187,23 +248,25 @@ document.addEventListener('DOMContentLoaded', () => {
         voice.updateCanvasInfo(drawer.getStatus());
     }, 1000);
 
-    voice.onCommand = async (text) => {
+    voice.onAudio = async (blob) => {
         try {
-            const result = await client.send(text);
+            const result = await client.sendAudio(blob);
+            const text = (result.text || '').trim();
+            voice.displayTranscript(text);
+
             if (result.commands && result.commands.length > 0) {
                 drawer.executeCommands(result.commands);
-                voice.addHistory(text, '✅');
-            } else {
+                voice.addHistory(text || '语音指令', '✅');
+            } else if (text) {
                 voice.addHistory(text, '💬');
             }
+
             voice.updateCanvasInfo(drawer.getStatus());
-            if (result.tts) speak(result.tts);
+            if (result.tts) await speak(result.tts);
         } catch (err) {
-            console.error('指令处理失败:', err);
-            voice.addHistory(text, '❌');
-            speak('抱歉，处理指令时出了点问题');
-        } finally {
-            voice.setProcessingDone();
+            console.error('语音指令处理失败:', err);
+            voice.addHistory('语音识别失败', '❌');
+            await speak('抱歉，处理语音时出了点问题');
         }
     };
 
@@ -214,16 +277,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /** 语音合成 */
 function speak(text) {
-    if (!text || !window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'zh-CN';
-    u.rate = 1.0;
-    u.pitch = 1.0;
-    const voices = window.speechSynthesis.getVoices();
-    const zh = voices.find(v => v.lang.startsWith('zh'));
-    if (zh) u.voice = zh;
-    window.speechSynthesis.speak(u);
+    if (!text || !window.speechSynthesis) return Promise.resolve();
+
+    return new Promise((resolve) => {
+        let done = false;
+        const finish = () => {
+            if (done) return;
+            done = true;
+            resolve();
+        };
+
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'zh-CN';
+        u.rate = 1.0;
+        u.pitch = 1.0;
+        u.onend = finish;
+        u.onerror = finish;
+        const voices = window.speechSynthesis.getVoices();
+        const zh = voices.find(v => v.lang.startsWith('zh'));
+        if (zh) u.voice = zh;
+        window.speechSynthesis.speak(u);
+        setTimeout(finish, Math.max(1500, text.length * 250));
+    });
 }
 
 if (window.speechSynthesis) {

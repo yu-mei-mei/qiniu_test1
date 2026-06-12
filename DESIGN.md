@@ -2,7 +2,7 @@
 
 ## 1. 项目概述
 
-一款纯语音控制的 AI 绘图工具，用户无需使用鼠标或键盘，仅通过语音指令即可完成绘图创作。系统利用 Web Speech API 进行语音识别，Claude API 将自然语言指令解析为结构化绘图命令，最终在 HTML Canvas 上呈现。
+一款纯语音控制的 AI 绘图工具，用户无需使用鼠标或键盘，仅通过语音指令即可完成绘图创作。系统利用 MediaRecorder 录音并由后端 ASR 服务进行语音识别，DeepSeek API 将自然语言指令解析为结构化绘图命令，最终在 HTML Canvas 上呈现。
 
 ## 2. 技术架构
 
@@ -12,14 +12,14 @@
 │                                               │
 │  ┌──────────────┐    ┌──────────────────┐     │
 │  │ VoiceController│   │   DrawEngine     │     │
-│  │ (Web Speech    │──►│  (Canvas 2D)     │     │
-│  │  API 语音识别)  │   │  绘图、撤销/重做  │     │
+│  │ (MediaRecorder │──►│  (Canvas 2D)     │     │
+│  │  浏览器录音)    │   │  绘图、撤销/重做  │     │
 │  └──────┬───────┘    └──────────────────┘     │
-│         │ HTTP POST /api/parse                 │
+│         │ HTTP POST /api/voice                 │
 │         ▼                                      │
 │  ┌──────────────────────────────────────┐      │
 │  │         CommandClient               │      │
-│  │   (发送语音文本，接收结构化指令)      │      │
+│  │   (上传音频，接收结构化指令)          │      │
 │  └──────────────────────────────────────┘      │
 └─────────────────────┬─────────────────────────┘
                       │ JSON
@@ -28,14 +28,18 @@
 │             后端 (Python/FastAPI)              │
 │                                               │
 │  ┌──────────────────────────────────────┐     │
-│  │         /api/parse 接口              │     │
-│  │  POST 接收 {"text": "画一个红色圆"}   │     │
+│  │         /api/voice 接口              │     │
+│  │  POST 接收浏览器录音文件              │     │
 │  └──────────────┬───────────────────────┘     │
-│                 │                             │
+│                 ▼                             │
+│  ┌──────────────────────────────────────┐     │
+│  │         asr.py                       │     │
+│  │   调用 ASR 服务转写语音为文本         │     │
+│  └──────────────┬───────────────────────┘     │
 │                 ▼                             │
 │  ┌──────────────────────────────────────┐     │
 │  │         command_parser.py            │     │
-│  │   调用 Claude API 解析自然语言指令      │     │
+│  │   调用 DeepSeek API 解析自然语言指令      │     │
 │  │   → 返回结构化 JSON 绘图命令           │     │
 │  └──────────────────────────────────────┘     │
 └──────────────────────────────────────────────┘
@@ -45,10 +49,10 @@
 
 | 模块 | 技术 | 选型理由 |
 |------|------|----------|
-| 语音识别 | Web Speech API | 浏览器内置，无需额外依赖，支持中文普通话连续识别 |
+| 语音识别 | MediaRecorder + 后端 ASR | 避免浏览器 Web Speech 网络限制，支持服务端可配置语音识别 |
 | 绘图引擎 | HTML Canvas 2D | 功能丰富，性能优秀，像素级撤销/重做支持 |
-| 后端框架 | FastAPI (Python) | 异步支持好，与 Anthropic SDK 集成方便 |
-| 指令解析 | Claude API | 自然语言理解能力强，支持复杂指令拆解和空间推理 |
+| 后端框架 | FastAPI (Python) | 异步支持好，便于集成 OpenAI-compatible API |
+| 指令解析 | DeepSeek API | 自然语言理解能力强，支持复杂指令拆解和空间推理 |
 | 语音合成 | Web Speech Synthesis | 浏览器内置，无需额外服务 |
 | 通信协议 | HTTP REST (JSON) | 简单可靠，单接口满足需求 |
 
@@ -110,7 +114,7 @@
 |----|------|------|------|
 | #1 | pr1-project-scaffold | 项目骨架 + Canvas 画布 | ✅ 已合并 |
 | #2 | pr2-speech-recognition | Web Speech API 语音识别 | ✅ 已合并 |
-| #3 | pr3-command-parser | 后端 Claude API 指令解析 | ✅ 已合并 |
+| #3 | pr3-command-parser | 后端 AI 指令解析 | ✅ 已合并 |
 | #4 | pr4-frontend-integration | 前后端打通 + 基本绘图 | ✅ 已合并 |
 | #5 | pr5-color-style | 颜色与样式支持 | ✅ 已合并 |
 | #6 | pr6-canvas-management | 绘图管理（撤销/重做） | ✅ 已合并 |
@@ -129,7 +133,7 @@ pip install -r requirements.txt
 
 # 2. 配置 API Key
 cp .env.example .env
-# 编辑 .env 填入你的 ANTHROPIC_API_KEY
+# 编辑 .env 填入你的 DEEPSEEK_API_KEY
 ```
 
 ### 5.2 启动应用
@@ -211,7 +215,7 @@ qiniu_test_1/
 ├── backend/
 │   ├── __init__.py           # Python 包标识
 │   ├── main.py               # FastAPI 应用入口
-│   ├── command_parser.py     # Claude API 指令解析
+│   ├── command_parser.py     # DeepSeek API 指令解析
 │   ├── requirements.txt      # Python 依赖
 │   ├── .env                  # API Key 配置（不提交）
 │   └── .env.example          # 环境变量模板
@@ -226,13 +230,13 @@ qiniu_test_1/
 ## 8. 性能与优化
 
 ### 指令响应延迟
-- **语音识别**：Web Speech API 实时回流，最终结果延迟约 0.5-1.5s（取决于说话长度）
-- **指令解析**：Claude API 调用约 1-3s（含网络往返）
+- **语音识别**：浏览器分段录音上传，ASR 返回文本，延迟约 2-5s（取决于音频长度和网络）
+- **指令解析**：DeepSeek API 调用约 1-3s（含网络往返）
 - **绘图渲染**：Canvas 操作 < 10ms
 - **总延迟**：从说完话到看到图形约 2-5s
 
 ### 容错处理
 - 语音识别失败自动重启（非致命错误）
-- Claude 解析失败返回友好提示
+- DeepSeek 解析失败返回友好提示
 - 绘图引擎捕获异常防止崩溃
 - canvas-info 实时反馈操作状态

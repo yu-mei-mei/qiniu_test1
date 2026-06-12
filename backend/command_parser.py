@@ -1,16 +1,18 @@
-"""
-Claude API 指令解析模块
-将自然语言语音指令转换为结构化绘图命令
-"""
+"""DeepSeek 指令解析模块。"""
 import os
 import json
+import logging
 from dotenv import load_dotenv
-from anthropic import Anthropic
+from openai import OpenAI
 
 load_dotenv()
+logger = logging.getLogger(__name__)
 
-# Claude API 客户端
-client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+client = OpenAI(
+    api_key=os.getenv("DEEPSEEK_API_KEY"),
+    base_url=os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
+)
+MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 
 # 画布尺寸参考
 CANVAS_WIDTH = 800
@@ -134,32 +136,17 @@ def parse_command(user_text: str) -> dict:
         return {"commands": [], "tts": "请说出您想画的图形"}
 
     try:
-        response = client.messages.create(
-            model="claude-sonnet-4-6",
+        response = client.chat.completions.create(
+            model=MODEL,
             max_tokens=2048,
-            system=SYSTEM_PROMPT,
             messages=[
-                {"role": "user", "content": user_text}
-            ]
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user_text},
+            ],
+            response_format={"type": "json_object"},
         )
 
-        # 找到 text 块（响应可能包含 thinking 块 + text 块）
-        content = ""
-        for block in response.content:
-            block_type = getattr(block, 'type', None) or type(block).__name__
-            if 'text' in block_type.lower():
-                content = block.text
-                break
-            if hasattr(block, 'text') and block.text:
-                content = block.text
-                break
-        if not content:
-            # 尝试任何有 text 属性的块
-            for block in response.content:
-                if hasattr(block, 'text'):
-                    content = block.text or ""
-                    if content:
-                        break
+        content = response.choices[0].message.content or ""
         if not content:
             raise ValueError("响应中没有文本内容")
 
@@ -180,13 +167,17 @@ def parse_command(user_text: str) -> dict:
 
         return result
 
-    except json.JSONDecodeError as e:
+    except json.JSONDecodeError:
+        logger.exception("DeepSeek returned invalid JSON for instruction: %r", user_text)
         return {
             "commands": [],
-            "tts": f"抱歉，指令解析出错了，请换个说法试试"
+            "tts": "抱歉，指令解析出错了，请换个说法试试",
+            "error": "invalid_model_response",
         }
-    except Exception as e:
+    except Exception:
+        logger.exception("Failed to parse drawing instruction: %r", user_text)
         return {
             "commands": [],
-            "tts": f"抱歉，处理指令时出现了错误"
+            "tts": "抱歉，绘图服务暂时不可用，请检查后端 API 配置",
+            "error": "command_parser_unavailable",
         }
