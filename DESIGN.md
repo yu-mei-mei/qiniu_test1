@@ -67,6 +67,11 @@
 - [x] 画三角形 (`draw_triangle`)
 - [x] 画点 (`draw_dot`)
 - [x] 绘制文字 (`draw_text`)
+- [x] 画椭圆 (`draw_ellipse`)
+- [x] 画多边形 (`draw_polygon`)
+- [x] 画圆角矩形 (`draw_rounded_rectangle`)
+- [x] 画圆弧 (`draw_arc`)
+- [x] 画自由曲线路径 (`draw_path`)
 
 #### 样式控制
 - [x] 颜色设置（支持中英文 20+ 种颜色）
@@ -203,6 +208,11 @@ POST /api/parse
 | `draw_triangle` | 画三角形 | x1, y1, x2, y2, x3, y3, color, fill |
 | `draw_dot` | 画点 | x, y, size, color |
 | `draw_text` | 绘制文字 | x, y, text, color, size |
+| `draw_ellipse` | 画椭圆 | x, y, radius_x, radius_y, rotation, color, fill |
+| `draw_rounded_rectangle` | 画圆角矩形 | x, y, width, height, radius, color, fill |
+| `draw_polygon` | 画多边形 | points, color, fill |
+| `draw_arc` | 画圆弧 | x, y, radius, start_angle, end_angle, color, width |
+| `draw_path` | 画自由曲线路径 | segments, color, width, fill, close |
 | `set_style` | 设置默认样式 | color, fill, line_width |
 | `clear` | 清空画布 | — |
 | `undo` | 撤销 | — |
