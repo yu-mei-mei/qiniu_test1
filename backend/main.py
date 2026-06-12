@@ -7,11 +7,21 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
+
+from .command_parser import parse_command
 
 app = FastAPI(title="AI 语音绘图工具")
 
 # 前端文件目录
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
+
+
+# ===== 数据模型 =====
+
+class ParseRequest(BaseModel):
+    """指令解析请求"""
+    text: str
 
 
 # ===== API 路由 =====
@@ -20,6 +30,13 @@ FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 async def health_check():
     """健康检查接口"""
     return {"status": "ok", "message": "AI 语音绘图工具服务运行中"}
+
+
+@app.post("/api/parse")
+async def parse_instruction(req: ParseRequest):
+    """将自然语言指令解析为结构化绘图命令"""
+    result = parse_command(req.text)
+    return result
 
 
 # ===== 前端静态文件（挂载在 /static 下） =====
