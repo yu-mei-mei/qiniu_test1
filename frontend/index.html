@@ -55,16 +55,123 @@
             height: 600px;
         }
 
-        .status-bar {
+        /* 语音识别状态指示器 */
+        .voice-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
             margin-top: 16px;
-            padding: 10px 20px;
+            padding: 12px 20px;
             background: white;
-            border-radius: 8px;
+            border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-            color: #636e72;
-            font-size: 14px;
-            text-align: center;
             min-width: 400px;
+            justify-content: space-between;
+        }
+
+        .voice-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mic-icon {
+            font-size: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .mic-icon.listening {
+            color: #e74c3c;
+            animation: pulse 1.2s ease-in-out infinite;
+        }
+
+        .mic-icon.idle {
+            color: #b2bec3;
+        }
+
+        .mic-icon.error {
+            color: #f39c12;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.15); opacity: 0.7; }
+        }
+
+        .status-text {
+            font-size: 14px;
+            color: #636e72;
+        }
+
+        .status-text.listening {
+            color: #e74c3c;
+            font-weight: 500;
+        }
+
+        /* 指令显示区 */
+        .transcript-area {
+            margin-top: 12px;
+            padding: 14px 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            min-width: 400px;
+            min-height: 50px;
+            max-height: 120px;
+            overflow-y: auto;
+            font-size: 16px;
+            color: #2d3436;
+            line-height: 1.5;
+        }
+
+        .transcript-area .interim {
+            color: #b2bec3;
+        }
+
+        .transcript-area .final {
+            color: #2d3436;
+        }
+
+        .transcript-area .placeholder {
+            color: #b2bec3;
+            font-style: italic;
+        }
+
+        /* 指令历史 */
+        .history-area {
+            margin-top: 12px;
+            padding: 14px 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            min-width: 400px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .history-area .title {
+            font-size: 12px;
+            color: #b2bec3;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .history-item {
+            padding: 4px 0;
+            font-size: 14px;
+            color: #636e72;
+            border-bottom: 1px solid #f5f5f5;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-item .time {
+            color: #b2bec3;
+            font-size: 12px;
+            margin-right: 8px;
         }
 
         footer {
@@ -84,15 +191,30 @@
         <canvas id="drawCanvas" width="800" height="600"></canvas>
     </div>
 
-    <div class="status-bar" id="statusBar">
-        💡 请启动后端服务后访问此页面
+    <!-- 语音状态指示器 -->
+    <div class="voice-indicator">
+        <div class="voice-status">
+            <span class="mic-icon idle" id="micIcon">🎤</span>
+            <span class="status-text" id="statusText">正在连接语音服务...</span>
+        </div>
+        <span id="langLabel" style="font-size:12px;color:#b2bec3;">中文普通话</span>
+    </div>
+
+    <!-- 当前识别 -->
+    <div class="transcript-area" id="transcriptArea">
+        <span class="placeholder">🎤 说话后这里会显示识别文字...</span>
+    </div>
+
+    <!-- 指令历史 -->
+    <div class="history-area" id="historyArea">
+        <div class="title">📋 指令历史</div>
     </div>
 
     <footer>
-        Powered by Claude API
+        Powered by Claude API · 语音识别 (Web Speech API)
     </footer>
 
-    <script src="app.js"></script>
-    <script src="drawer.js"></script>
+    <script src="/static/app.js"></script>
+    <script src="/static/drawer.js"></script>
 </body>
 </html>
