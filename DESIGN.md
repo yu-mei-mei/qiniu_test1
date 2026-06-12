@@ -53,6 +53,7 @@
 | 绘图引擎 | HTML Canvas 2D | 功能丰富，性能优秀，像素级撤销/重做支持 |
 | 后端框架 | FastAPI (Python) | 异步支持好，便于集成 OpenAI-compatible API |
 | 指令解析 | DeepSeek API | 自然语言理解能力强，支持复杂指令拆解和空间推理 |
+| AI 生图 | OpenAI Images API（可选） | 复杂对象和开放式创作可直接生成图片，再绘制到 Canvas |
 | 语音合成 | Web Speech Synthesis | 浏览器内置，无需额外服务 |
 | 通信协议 | HTTP REST (JSON) | 简单可靠，单接口满足需求 |
 
@@ -92,6 +93,7 @@
 - [x] 对称布局
 - [x] 复杂对象自动拆解（"画一个房子"→ 矩形+三角形）
 - [x] 常见复杂对象模板库（如"皮卡丘"走前端高质量 Canvas 模板）
+- [x] 可选 AI 生图模式（复杂对象优先生成图片，未配置 Key 时回退 Canvas 命令）
 
 #### 交互反馈
 - [x] 实时显示识别文字（中间结果 + 最终结果）
@@ -230,6 +232,7 @@ qiniu_test_1/
 │   ├── requirements.txt      # Python 依赖
 │   ├── .env                  # API Key 配置（不提交）
 │   └── .env.example          # 环境变量模板
+│   ├── image_generator.py   # AI 图片生成（可选）
 ├── frontend/
 │   ├── index.html            # 主页面（深色主题 UI）
 │   ├── app.js                # 应用逻辑（语音识别、通信）

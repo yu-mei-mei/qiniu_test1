@@ -267,6 +267,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const text = (result.text || '').trim();
             voice.displayTranscript(text);
 
+            if (result.image) {
+                drawer.clear();
+                await drawer.drawImage(result.image.data_url, result.image.url);
+                voice.addHistory(text || 'AI 图片', '✅');
+                voice.updateCanvasInfo(drawer.getStatus());
+                if (result.tts) await speak(result.tts);
+                return;
+            }
+
             const template = findDrawingTemplate(text);
             if (template) {
                 drawer.clear();
