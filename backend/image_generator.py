@@ -4,6 +4,7 @@ import logging
 import os
 import re
 
+import httpx
 from openai import OpenAI
 
 logger = logging.getLogger(__name__)
@@ -31,6 +32,17 @@ def generate_image(text: str) -> dict:
     provider = os.getenv("IMAGE_PROVIDER", "openai").lower().strip()
     prompt = _build_prompt(text)
 
+    if provider == "zhipu":
+        return _generate_openai_compatible_image(
+            prompt=prompt,
+            api_key=os.getenv("ZHIPU_IMAGE_API_KEY") or os.getenv("ZHIPU_API_KEY"),
+            base_url=os.getenv("ZHIPU_IMAGE_BASE_URL", "https://open.bigmodel.cn/api/paas/v4"),
+            model=os.getenv("ZHIPU_IMAGE_MODEL", "cogview-3-flash"),
+            size=os.getenv("ZHIPU_IMAGE_SIZE", "1024x1024"),
+            missing_message="未配置 ZHIPU_IMAGE_API_KEY",
+            require_base_url=True,
+        )
+
     if provider == "xiaomi":
         return _generate_openai_compatible_image(
             prompt=prompt,
@@ -39,6 +51,7 @@ def generate_image(text: str) -> dict:
             model=os.getenv("XIAOMI_IMAGE_MODEL"),
             size=os.getenv("XIAOMI_IMAGE_SIZE", "1024x1024"),
             missing_message="未配置小米 MiMo 文生图接口参数",
+            require_base_url=True,
         )
 
     return _generate_openai_compatible_image(
@@ -48,14 +61,23 @@ def generate_image(text: str) -> dict:
         model=os.getenv("OPENAI_IMAGE_MODEL", "gpt-image-1"),
         size=os.getenv("OPENAI_IMAGE_SIZE", "1024x1024"),
         missing_message="未配置 OPENAI_IMAGE_API_KEY",
+        require_base_url=False,
     )
 
 
-def _generate_openai_compatible_image(prompt: str, api_key: str | None, base_url: str | None, model: str | None, size: str, missing_message: str) -> dict:
+def _generate_openai_compatible_image(
+    prompt: str,
+    api_key: str | None,
+    base_url: str | None,
+    model: str | None,
+    size: str,
+    missing_message: str,
+    require_base_url: bool,
+) -> dict:
     if not api_key or not model:
         return {"ok": False, "error": "image_api_not_configured", "message": missing_message}
-    if os.getenv("IMAGE_PROVIDER", "openai").lower().strip() == "xiaomi" and not base_url:
-        return {"ok": False, "error": "image_api_not_configured", "message": "未配置 XIAOMI_IMAGE_BASE_URL"}
+    if require_base_url and not base_url:
+        return {"ok": False, "error": "image_api_not_configured", "message": "未配置图片生成 Base URL"}
 
     client = OpenAI(api_key=api_key, base_url=base_url)
     try:
@@ -65,6 +87,9 @@ def _generate_openai_compatible_image(prompt: str, api_key: str | None, base_url
         if not b64:
             url = getattr(item, "url", None)
             if url:
+                data_url = _download_image_data_url(url)
+                if data_url:
+                    return {"ok": True, "data_url": data_url, "url": url, "prompt": prompt}
                 return {"ok": True, "url": url, "prompt": prompt}
             return {"ok": False, "error": "empty_image_response", "message": "图像生成没有返回图片"}
         # Validate base64 enough to avoid returning malformed data URLs.
@@ -73,6 +98,20 @@ def _generate_openai_compatible_image(prompt: str, api_key: str | None, base_url
     except Exception:
         logger.exception("Failed to generate image")
         return {"ok": False, "error": "image_generation_failed", "message": "AI 图像生成失败，已回退到 Canvas 绘图"}
+
+
+def _download_image_data_url(url: str) -> str | None:
+    try:
+        response = httpx.get(url, follow_redirects=True, timeout=30)
+        response.raise_for_status()
+        content_type = response.headers.get("content-type", "image/png").split(";", 1)[0]
+        if not content_type.startswith("image/"):
+            content_type = "image/png"
+        b64 = base64.b64encode(response.content).decode("ascii")
+        return f"data:{content_type};base64,{b64}"
+    except Exception:
+        logger.exception("Failed to download generated image")
+        return None
 
 
 def _is_basic_geometry_request(text: str) -> bool:
