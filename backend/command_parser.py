@@ -51,23 +51,50 @@ SYSTEM_PROMPT = f"""你是一个语音绘图助手的指令解析器。你的任
    参数: x, y, text(文字内容), color(颜色), size(字号)
    示例: {{"action":"draw_text","params":{{"x":400,"y":300,"text":"你好","color":"black","size":24}}}}
 
-7. clear —— 清空画布
+7. draw_ellipse —— 画椭圆/椭圆形身体/脸/云朵部件
+   参数: x, y, radius_x, radius_y, rotation(弧度,默认0), color, fill, fill_color
+   示例: {{"action":"draw_ellipse","params":{{"x":400,"y":300,"radius_x":120,"radius_y":70,"rotation":0,"color":"#2d3436","fill":true,"fill_color":"yellow"}}}}
+
+8. draw_rounded_rectangle —— 画圆角矩形（适合身体、车身、窗户、可爱风格部件）
+   参数: x, y, width, height, radius, color, fill, fill_color
+   示例: {{"action":"draw_rounded_rectangle","params":{{"x":260,"y":360,"width":280,"height":120,"radius":32,"color":"black","fill":true,"fill_color":"#ffd928"}}}}
+
+9. draw_polygon —— 画任意多边形（适合耳朵、尾巴、星星、山、闪电等）
+   参数: points(点数组,每个点含x,y), color, fill, fill_color
+   示例: {{"action":"draw_polygon","params":{{"points":[{{"x":400,"y":100}},{{"x":340,"y":220}},{{"x":460,"y":220}}],"color":"black","fill":true,"fill_color":"orange"}}}}
+
+10. draw_arc —— 画圆弧（适合微笑、眉毛、装饰弧线）
+   参数: x, y, radius, start_angle, end_angle, color, width
+   角度使用弧度，例如 0 到 3.14 是半圆。
+   示例: {{"action":"draw_arc","params":{{"x":400,"y":320,"radius":45,"start_angle":0.2,"end_angle":2.9,"color":"black","width":4}}}}
+
+11. draw_path —— 画自由路径/贝塞尔曲线（适合轮廓、表情、复杂对象）
+   参数: segments, color, width, fill, fill_color, close
+   segments 支持：
+   - {{"type":"move","x":100,"y":100}}
+   - {{"type":"line","x":200,"y":100}}
+   - {{"type":"quadratic","cpx":150,"cpy":50,"x":200,"y":100}}
+   - {{"type":"bezier","cp1x":120,"cp1y":80,"cp2x":180,"cp2y":60,"x":220,"y":120}}
+   - {{"type":"close"}}
+   示例: {{"action":"draw_path","params":{{"segments":[{{"type":"move","x":300,"y":300}},{{"type":"bezier","cp1x":330,"cp1y":260,"cp2x":470,"cp2y":260,"x":500,"y":300}}],"color":"black","width":5,"fill":false}}}}
+
+12. clear —— 清空画布
    参数: 无
    示例: {{"action":"clear","params":{{}}}}
 
-8. undo —— 撤销上一步
+13. undo —— 撤销上一步
    参数: 无
    示例: {{"action":"undo","params":{{}}}}
 
-9. redo —— 重做被撤销的步骤
+14. redo —— 重做被撤销的步骤
    参数: 无
    示例: {{"action":"redo","params":{{}}}}
 
-10. set_background —— 设置背景色
+15. set_background —— 设置背景色
    参数: color(颜色名称或十六进制)
    示例: {{"action":"set_background","params":{{"color":"lightblue"}}}}
 
-11. set_style —— 设置后续绘图的默认样式
+16. set_style —— 设置后续绘图的默认样式
    参数: color(描边颜色), fill(是否填充,true/false), fill_color(填充颜色), line_width(线宽)
    示例: {{"action":"set_style","params":{{"color":"red","fill":true,"line_width":5}}}}
    说明: 当用户说"把颜色设为蓝色"、"使用填充模式"、"把线条加粗"等时使用此指令。此后绘制的图形使用此样式。
@@ -122,6 +149,14 @@ SYSTEM_PROMPT = f"""你是一个语音绘图助手的指令解析器。你的任
 红色/red, 橙色/orange, 黄色/yellow, 绿色/green, 蓝色/blue, 紫色/purple, 黑色/black, 白色/white, 灰色/gray, 粉色/pink, 棕色/brown, 青色/cyan, 天蓝/skyblue, 深蓝/navy, 金色/gold, 银色/silver, 深绿/darkgreen, 浅绿/lightgreen
 也支持十六进制颜色如 #FF0000
 
+## 复杂对象绘制质量规则
+- 对动物、人物、卡通角色、花朵、车辆、风景等复杂对象，不要只用圆形/矩形/三角形粗糙拼接。优先使用 draw_ellipse、draw_polygon、draw_path、draw_arc 表达轮廓、表情、耳朵、尾巴、四肢、装饰。
+- 一个复杂对象通常输出 8-25 条命令，按从后到前的顺序绘制：背景/尾巴 → 身体 → 头部 → 耳朵/四肢 → 五官/纹理/高光。
+- 使用 fill_color 产生不同填充色，使用黑色或深色描边增强可读性。卡通对象建议线宽 3-6。
+- 表情、嘴巴、眉毛、轮廓优先使用 draw_path 或 draw_arc；身体和脸优先使用 draw_ellipse；尾巴、耳朵、星星、闪电优先使用 draw_polygon。
+- 坐标必须保持在 800x600 画布内，主体居中，留出边距，避免重叠遮挡关键部位。
+- 如果需要设置背景色，set_background 必须作为 commands 数组的第一条命令。
+
 ## 重要规则
 1. 如果用户指令不明确，做出合理的默认选择，不要拒绝
 2. 复杂的复合指令（如"画一个红色的圆，里面画一个蓝色的三角形"）拆分为多条指令
@@ -138,7 +173,7 @@ def parse_command(user_text: str) -> dict:
     try:
         response = client.chat.completions.create(
             model=MODEL,
-            max_tokens=2048,
+            max_tokens=4096,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_text},

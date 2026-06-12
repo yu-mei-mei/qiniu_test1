@@ -134,6 +134,111 @@ class DrawEngine {
     }
 
 
+    drawEllipse(x = 400, y = 300, radiusX = 100, radiusY = 60, rotation = 0, color, fill, fillColor) {
+        const c = this._resolveColor(color);
+        const fc = fillColor ? this._resolveColor(fillColor) : c;
+        const f = fill !== undefined ? fill : this.style.fillMode;
+        this.ctx.beginPath();
+        this.ctx.ellipse(x, y, radiusX, radiusY, rotation || 0, 0, Math.PI * 2);
+        this._applyStroke(c);
+        if (f) this._applyFill(fc);
+        if (f) this.ctx.fill();
+        this.ctx.stroke();
+        return this._commit('draw_ellipse');
+    }
+
+    drawRoundedRectangle(x = 200, y = 150, width = 200, height = 140, radius = 24, color, fill, fillColor) {
+        const c = this._resolveColor(color);
+        const fc = fillColor ? this._resolveColor(fillColor) : c;
+        const f = fill !== undefined ? fill : this.style.fillMode;
+        const r = Math.min(radius || 0, width / 2, height / 2);
+        this.ctx.beginPath();
+        this.ctx.moveTo(x + r, y);
+        this.ctx.lineTo(x + width - r, y);
+        this.ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+        this.ctx.lineTo(x + width, y + height - r);
+        this.ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+        this.ctx.lineTo(x + r, y + height);
+        this.ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+        this.ctx.lineTo(x, y + r);
+        this.ctx.quadraticCurveTo(x, y, x + r, y);
+        this.ctx.closePath();
+        this._applyStroke(c);
+        if (f) this._applyFill(fc);
+        if (f) this.ctx.fill();
+        this.ctx.stroke();
+        return this._commit('draw_rounded_rectangle');
+    }
+
+    drawPolygon(points = [], color, fill, fillColor) {
+        if (!Array.isArray(points) || points.length < 2) return this;
+        const c = this._resolveColor(color);
+        const fc = fillColor ? this._resolveColor(fillColor) : c;
+        const f = fill !== undefined ? fill : this.style.fillMode;
+        this.ctx.beginPath();
+        this.ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+            this.ctx.lineTo(points[i].x, points[i].y);
+        }
+        this.ctx.closePath();
+        this._applyStroke(c);
+        if (f) this._applyFill(fc);
+        if (f) this.ctx.fill();
+        this.ctx.stroke();
+        return this._commit('draw_polygon');
+    }
+
+    drawArc(x = 400, y = 300, radius = 80, startAngle = 0, endAngle = Math.PI, color, width) {
+        const c = this._resolveColor(color);
+        const w = width || this.style.lineWidth;
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, radius, startAngle, endAngle);
+        this.ctx.strokeStyle = c;
+        this.ctx.lineWidth = w;
+        this.ctx.stroke();
+        return this._commit('draw_arc');
+    }
+
+    drawPath(segments = [], color, fill, fillColor, width, close = false) {
+        if (!Array.isArray(segments) || segments.length === 0) return this;
+        const c = this._resolveColor(color);
+        const fc = fillColor ? this._resolveColor(fillColor) : c;
+        const f = fill === true;
+        this.ctx.beginPath();
+        for (const segment of segments) {
+            switch (segment.type) {
+                case 'move':
+                    this.ctx.moveTo(segment.x, segment.y);
+                    break;
+                case 'line':
+                    this.ctx.lineTo(segment.x, segment.y);
+                    break;
+                case 'quadratic':
+                    this.ctx.quadraticCurveTo(segment.cpx, segment.cpy, segment.x, segment.y);
+                    break;
+                case 'bezier':
+                    this.ctx.bezierCurveTo(segment.cp1x, segment.cp1y, segment.cp2x, segment.cp2y, segment.x, segment.y);
+                    break;
+                case 'arc':
+                    this.ctx.arc(segment.x, segment.y, segment.radius, segment.start_angle || 0, segment.end_angle || Math.PI * 2);
+                    break;
+                case 'close':
+                    this.ctx.closePath();
+                    break;
+            }
+        }
+        if (close) this.ctx.closePath();
+        this.ctx.strokeStyle = c;
+        this.ctx.lineWidth = width || this.style.lineWidth;
+        if (f) {
+            this._applyFill(fc);
+            this.ctx.fill();
+        }
+        this.ctx.stroke();
+        return this._commit('draw_path');
+    }
+
+
 
     // ===== 模板绘制 =====
 
@@ -342,10 +447,12 @@ class DrawEngine {
     /** 设置背景色 */
     setBackground(color) {
         this.bgColor = this._resolveColor(color) || '#ffffff';
+        this.undoStack = [];
+        this.redoStack = [];
+        this.actionCount = 0;
         this._renderBackground();
-        // 重绘所有历史状态
-        this._rebuildFromHistory();
-        return this._commit('set_background');
+        this._saveSnapshot();
+        return this;
     }
 
     /** 批量执行绘图命令 */
@@ -372,6 +479,21 @@ class DrawEngine {
                         break;
                     case 'draw_text':
                         this.drawText(params.x, params.y, params.text, params.color, params.size);
+                        break;
+                    case 'draw_ellipse':
+                        this.drawEllipse(params.x, params.y, params.radius_x, params.radius_y, params.rotation, params.color, params.fill, params.fill_color);
+                        break;
+                    case 'draw_rounded_rectangle':
+                        this.drawRoundedRectangle(params.x, params.y, params.width, params.height, params.radius, params.color, params.fill, params.fill_color);
+                        break;
+                    case 'draw_polygon':
+                        this.drawPolygon(params.points, params.color, params.fill, params.fill_color);
+                        break;
+                    case 'draw_arc':
+                        this.drawArc(params.x, params.y, params.radius, params.start_angle, params.end_angle, params.color, params.width);
+                        break;
+                    case 'draw_path':
+                        this.drawPath(params.segments, params.color, params.fill, params.fill_color, params.width, params.close);
                         break;
                     case 'set_style':
                         this.setStyle(params);
