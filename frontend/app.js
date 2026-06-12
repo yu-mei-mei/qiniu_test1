@@ -237,6 +237,19 @@ class CommandClient {
 }
 
 
+
+function findDrawingTemplate(text) {
+    const normalized = (text || '').toLowerCase();
+    if (normalized.includes('皮卡丘') || normalized.includes('pikachu')) {
+        return {
+            name: 'pikachu',
+            label: '皮卡丘',
+            tts: '好的，我画了一个皮卡丘。',
+        };
+    }
+    return null;
+}
+
 // ===== 启动 =====
 document.addEventListener('DOMContentLoaded', () => {
     const drawer = new DrawEngine('drawCanvas');
@@ -254,7 +267,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const text = (result.text || '').trim();
             voice.displayTranscript(text);
 
+            const template = findDrawingTemplate(text);
+            if (template) {
+                drawer.clear();
+                drawer.drawTemplate(template.name);
+                voice.addHistory(template.label, '✅');
+                voice.updateCanvasInfo(drawer.getStatus());
+                await speak(template.tts);
+                return;
+            }
+
             if (result.commands && result.commands.length > 0) {
+                drawer.clear();
                 drawer.executeCommands(result.commands);
                 voice.addHistory(text || '语音指令', '✅');
             } else if (text) {
