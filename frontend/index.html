@@ -5,203 +5,247 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI 语音绘图工具</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0c0e1a 0%, #1a1f36 40%, #2d1b3d 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif;
             padding: 20px;
+            color: #e0e0e0;
         }
 
+        /* 头部 */
         header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
+            animation: fadeInDown 0.6s ease;
         }
 
         h1 {
-            font-size: 28px;
-            color: #2d3436;
-            font-weight: 600;
-            letter-spacing: 2px;
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #f093fb, #f5576c, #4facfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 3px;
         }
 
         .subtitle {
-            color: #636e72;
+            color: rgba(255,255,255,0.5);
             font-size: 14px;
-            margin-top: 4px;
+            margin-top: 6px;
+            letter-spacing: 1px;
         }
 
+        /* 画布容器 */
         .canvas-wrapper {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            padding: 16px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 20px;
+            padding: 12px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+            animation: fadeInUp 0.6s ease 0.1s both;
         }
 
         canvas {
             display: block;
             background: #ffffff;
-            border-radius: 8px;
+            border-radius: 12px;
             cursor: default;
             width: 800px;
             height: 600px;
         }
 
-        /* 语音识别状态指示器 */
-        .voice-indicator {
+        /* 底部控制栏 */
+        .control-bar {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-top: 16px;
-            padding: 12px 20px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-            min-width: 400px;
-            justify-content: space-between;
+            gap: 20px;
+            margin-top: 20px;
+            padding: 14px 24px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.08);
+            min-width: 824px;
+            animation: fadeInUp 0.6s ease 0.2s both;
         }
 
         .voice-status {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
+            flex: 1;
         }
 
         .mic-icon {
-            font-size: 20px;
+            font-size: 24px;
             transition: all 0.3s ease;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
         }
 
         .mic-icon.listening {
-            color: #e74c3c;
+            background: rgba(231,76,60,0.15);
             animation: pulse 1.2s ease-in-out infinite;
         }
 
-        .mic-icon.idle {
-            color: #b2bec3;
-        }
-
-        .mic-icon.error {
-            color: #f39c12;
-        }
+        .mic-icon.idle { background: rgba(255,255,255,0.05); }
+        .mic-icon.error { background: rgba(243,156,18,0.15); }
 
         @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.15); opacity: 0.7; }
+            0%, 100% { box-shadow: 0 0 0 0 rgba(231,76,60,0.4); }
+            50% { box-shadow: 0 0 0 12px rgba(231,76,60,0); }
         }
 
-        .status-text {
-            font-size: 14px;
-            color: #636e72;
+        .status-text { font-size: 14px; color: rgba(255,255,255,0.7); }
+        .status-text.listening { color: #e74c3c; font-weight: 500; }
+
+        /* 画布信息 */
+        .canvas-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            color: rgba(255,255,255,0.4);
+            font-size: 12px;
         }
 
-        .status-text.listening {
-            color: #e74c3c;
-            font-weight: 500;
+        .canvas-info span {
+            padding: 4px 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
         }
 
-        /* 指令显示区 */
+        /* 识别文字 & 历史 */
         .transcript-area {
             margin-top: 12px;
-            padding: 14px 20px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-            min-width: 400px;
-            min-height: 50px;
-            max-height: 120px;
+            padding: 16px 24px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 14px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.06);
+            min-width: 824px;
+            min-height: 52px;
+            max-height: 80px;
             overflow-y: auto;
-            font-size: 16px;
-            color: #2d3436;
+            font-size: 18px;
+            color: rgba(255,255,255,0.9);
             line-height: 1.5;
+            text-align: center;
+            animation: fadeInUp 0.6s ease 0.3s both;
         }
 
-        .transcript-area .interim {
-            color: #b2bec3;
-        }
+        .transcript-area .interim { color: rgba(255,255,255,0.35); }
+        .transcript-area .final { color: rgba(255,255,255,0.9); }
+        .transcript-area .placeholder { color: rgba(255,255,255,0.25); font-style: italic; font-size: 15px; }
 
-        .transcript-area .final {
-            color: #2d3436;
-        }
-
-        .transcript-area .placeholder {
-            color: #b2bec3;
-            font-style: italic;
-        }
-
-        /* 指令历史 */
         .history-area {
             margin-top: 12px;
-            padding: 14px 20px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-            min-width: 400px;
-            max-height: 150px;
+            padding: 14px 24px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.05);
+            min-width: 824px;
+            max-height: 130px;
             overflow-y: auto;
+            animation: fadeInUp 0.6s ease 0.35s both;
         }
 
-        .history-area .title {
+        .history-area::-webkit-scrollbar,
+        .transcript-area::-webkit-scrollbar {
+            width: 4px;
+        }
+        .history-area::-webkit-scrollbar-track,
+        .transcript-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .history-area::-webkit-scrollbar-thumb,
+        .transcript-area::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.15);
+            border-radius: 2px;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
             font-size: 12px;
-            color: #b2bec3;
+            color: rgba(255,255,255,0.3);
             margin-bottom: 6px;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
         .history-item {
-            padding: 4px 0;
+            padding: 5px 0;
             font-size: 14px;
-            color: #636e72;
-            border-bottom: 1px solid #f5f5f5;
+            color: rgba(255,255,255,0.6);
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            display: flex;
+            justify-content: space-between;
         }
 
-        .history-item:last-child {
-            border-bottom: none;
-        }
-
-        .history-item .status-ok { color: #00b894; font-weight: bold; }
-        .history-item .status-skip { color: #6c5ce7; }
-        .history-item .status-err { color: #d63031; }
-
-        .history-item .time {
-            color: #b2bec3;
-            font-size: 12px;
-            margin-right: 8px;
-        }
+        .history-item:last-child { border-bottom: none; }
+        .history-item .time { color: rgba(255,255,255,0.25); font-size: 12px; min-width: 70px; }
+        .history-item .text { flex: 1; }
+        .history-item .status { margin-left: 8px; }
 
         footer {
             margin-top: 20px;
-            color: #b2bec3;
+            color: rgba(255,255,255,0.2);
             font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 响应式 */
+        @media (max-width: 860px) {
+            canvas { width: 100%; height: auto; }
+            .control-bar, .transcript-area, .history-area { min-width: auto; width: 100%; }
+            .control-bar { flex-wrap: wrap; }
         }
     </style>
 </head>
 <body>
     <header>
-        <h1>🎨 AI 语音绘图工具</h1>
-        <p class="subtitle">用声音描绘你的创意</p>
+        <h1>🎨 AI 语音绘图</h1>
+        <p class="subtitle">用声音描绘你的创意 · Powered by Claude</p>
     </header>
 
     <div class="canvas-wrapper">
         <canvas id="drawCanvas" width="800" height="600"></canvas>
     </div>
 
-    <!-- 语音状态指示器 -->
-    <div class="voice-indicator">
+    <!-- 控制栏 -->
+    <div class="control-bar">
         <div class="voice-status">
             <span class="mic-icon idle" id="micIcon">🎤</span>
             <span class="status-text" id="statusText">正在连接语音服务...</span>
         </div>
-        <span id="langLabel" style="font-size:12px;color:#b2bec3;">中文普通话</span>
+        <div class="canvas-info">
+            <span id="actionCount">📐 0</span>
+            <span id="undoInfo">↩️ 0</span>
+            <span id="redoInfo">↪️ 0</span>
+        </div>
     </div>
 
     <!-- 当前识别 -->
@@ -211,11 +255,14 @@
 
     <!-- 指令历史 -->
     <div class="history-area" id="historyArea">
-        <div class="title">📋 指令历史</div>
+        <div class="history-header">
+            <span>📋 指令历史</span>
+            <span id="historyCount">0 条</span>
+        </div>
     </div>
 
     <footer>
-        Powered by Claude API · 语音识别 (Web Speech API)
+        说出绘图指令 · 支持圆形、矩形、线条、三角形、文字、颜色、位置等
     </footer>
 
     <script src="/static/app.js"></script>
