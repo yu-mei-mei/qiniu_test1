@@ -57,11 +57,15 @@ SYSTEM_PROMPT = f"""你是一个语音绘图助手的指令解析器。你的任
    参数: 无
    示例: {{"action":"undo","params":{{}}}}
 
-9. set_background —— 设置背景色
+9. redo —— 重做被撤销的步骤
+   参数: 无
+   示例: {{"action":"redo","params":{{}}}}
+
+10. set_background —— 设置背景色
    参数: color(颜色名称或十六进制)
    示例: {{"action":"set_background","params":{{"color":"lightblue"}}}}
 
-10. set_style —— 设置后续绘图的默认样式
+11. set_style —— 设置后续绘图的默认样式
    参数: color(描边颜色), fill(是否填充,true/false), fill_color(填充颜色), line_width(线宽)
    示例: {{"action":"set_style","params":{{"color":"red","fill":true,"line_width":5}}}}
    说明: 当用户说"把颜色设为蓝色"、"使用填充模式"、"把线条加粗"等时使用此指令。此后绘制的图形使用此样式。
