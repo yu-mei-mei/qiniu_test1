@@ -11,7 +11,7 @@ from pydantic import BaseModel
 
 from .asr import transcribe_audio
 from .command_parser import parse_command
-from .image_generator import generate_image, should_generate_image
+from .image_generator import classify_draw_route, generate_image
 
 app = FastAPI(title="AI 语音绘图工具")
 
@@ -43,6 +43,8 @@ async def health_check():
 async def parse_instruction(req: ParseRequest):
     """将自然语言指令解析为结构化绘图命令"""
     result = parse_command(req.text)
+    result["draw_mode"] = "canvas"
+    result["route_reason"] = "文本解析接口默认返回 Canvas 绘图命令"
     return result
 
 
@@ -51,8 +53,21 @@ async def generate_image_from_text(req: ImageRequest):
     """根据文字生成图片，仅在后端使用图片模型 API Key。"""
     result = generate_image(req.text)
     if result.get("ok"):
-        return {"text": req.text, "image": result, "tts": "好的，我用 AI 生成了一张图片。"}
-    return {"text": req.text, "image": None, "tts": result.get("message", "AI 图像生成失败"), "error": result.get("error")}
+        return {
+            "text": req.text,
+            "image": result,
+            "draw_mode": "ai_image",
+            "route_reason": "直接调用图片生成接口",
+            "tts": "好的，我用 AI 生成了一张图片。",
+        }
+    return {
+        "text": req.text,
+        "image": None,
+        "draw_mode": "ai_image_failed",
+        "route_reason": "图片生成接口返回失败",
+        "tts": result.get("message", "AI 图像生成失败"),
+        "error": result.get("error"),
+    }
 
 
 @app.post("/api/voice")
@@ -67,22 +82,30 @@ async def parse_voice(file: UploadFile = File(...)):
         return {
             "text": "",
             "commands": [],
+            "draw_mode": "none",
+            "route_reason": "语音识别结果为空",
             "tts": asr_result.get("message", "没有听清楚，请再说一遍"),
             "error": asr_result.get("error", "empty_transcript"),
         }
 
-    if should_generate_image(text):
+    route = classify_draw_route(text)
+    if route.get("use_image"):
         image_result = generate_image(text)
         if image_result.get("ok"):
             return {
                 "text": text,
                 "commands": [],
                 "image": image_result,
+                "draw_mode": "ai_image",
+                "route_reason": route.get("route_reason"),
                 "tts": "好的，我用 AI 生成了一张图片。",
             }
+        route = {"draw_mode": "canvas_fallback", "route_reason": "AI 图片生成失败，回退到 Canvas 指令绘图"}
 
     result = parse_command(text)
     result["text"] = text
+    result["draw_mode"] = route.get("draw_mode", "canvas")
+    result["route_reason"] = route.get("route_reason")
     return result
 
 

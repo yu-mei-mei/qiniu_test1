@@ -182,15 +182,19 @@ class VoiceController {
         this.transcriptArea.scrollTop = this.transcriptArea.scrollHeight;
     }
 
-    addHistory(text, status = '') {
+    addHistory(text, status = '', mode = '', reason = '') {
         this.historyCount++;
         const now = new Date();
         const time = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         const statusMap = { '✅': '✅', '💬': '💬', '❌': '❌' };
         const icon = statusMap[status] || '';
+        const modeInfo = getDrawModeInfo(mode);
+        const modeBadge = modeInfo.label
+            ? `<span class="mode ${modeInfo.className}" title="${this._escapeHtml(reason || modeInfo.reason)}">${modeInfo.label}</span>`
+            : '';
         const item = document.createElement('div');
         item.className = 'history-item';
-        item.innerHTML = `<span class="time">${time}</span><span class="text">${this._escapeHtml(text)}</span><span class="status">${icon}</span>`;
+        item.innerHTML = `<span class="time">${time}</span><span class="text">${this._escapeHtml(text)}</span>${modeBadge}<span class="status">${icon}</span>`;
         this.historyArea.appendChild(item);
         this.historyArea.scrollTop = this.historyArea.scrollHeight;
         if (this.historyCountEl) this.historyCountEl.textContent = `${this.historyCount} 条`;
@@ -238,6 +242,18 @@ class CommandClient {
 
 
 
+function getDrawModeInfo(mode) {
+    const map = {
+        ai_image: { label: 'AI 生图', className: 'ai', reason: '复杂对象或开放式创作，使用图片模型生成' },
+        canvas: { label: 'Canvas 绘图', className: 'canvas', reason: '基础图形或可参数化指令，使用 Canvas 执行' },
+        canvas_fallback: { label: 'Canvas 回退', className: 'fallback', reason: 'AI 生图失败后回退到 Canvas 指令' },
+        canvas_template: { label: 'Canvas 模板', className: 'canvas', reason: '命中本地高质量模板' },
+        ai_image_failed: { label: 'AI 失败', className: 'fallback', reason: '图片生成接口失败' },
+    };
+    return map[mode] || { label: '', className: '', reason: '' };
+}
+
+
 function findDrawingTemplate(text) {
     const normalized = (text || '').toLowerCase();
     if (normalized.includes('皮卡丘') || normalized.includes('pikachu')) {
@@ -270,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.image) {
                 drawer.clear();
                 await drawer.drawImage(result.image.data_url, result.image.url);
-                voice.addHistory(text || 'AI 图片', '✅');
+                voice.addHistory(text || 'AI 图片', '✅', result.draw_mode || 'ai_image', result.route_reason);
                 voice.updateCanvasInfo(drawer.getStatus());
                 if (result.tts) await speak(result.tts);
                 return;
@@ -280,7 +296,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (template) {
                 drawer.clear();
                 drawer.drawTemplate(template.name);
-                voice.addHistory(template.label, '✅');
+                voice.addHistory(template.label, '✅', 'canvas_template', '命中本地 Canvas 模板');
                 voice.updateCanvasInfo(drawer.getStatus());
                 await speak(template.tts);
                 return;
@@ -289,9 +305,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.commands && result.commands.length > 0) {
                 drawer.clear();
                 drawer.executeCommands(result.commands);
-                voice.addHistory(text || '语音指令', '✅');
+                voice.addHistory(text || '语音指令', '✅', result.draw_mode || 'canvas', result.route_reason);
             } else if (text) {
-                voice.addHistory(text, '💬');
+                voice.addHistory(text, '💬', result.draw_mode, result.route_reason);
             }
 
             voice.updateCanvasInfo(drawer.getStatus());
