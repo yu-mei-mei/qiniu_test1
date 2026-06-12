@@ -134,6 +134,27 @@ class DrawEngine {
     }
 
 
+    drawImage(dataUrl, url) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                this._renderBackground();
+                const scale = Math.min(this.width / img.width, this.height / img.height);
+                const w = img.width * scale;
+                const h = img.height * scale;
+                const x = (this.width - w) / 2;
+                const y = (this.height - h) / 2;
+                this.ctx.drawImage(img, x, y, w, h);
+                this._commit('draw_image');
+                resolve(this);
+            };
+            img.onerror = reject;
+            img.src = dataUrl || url;
+        });
+    }
+
+
     drawEllipse(x = 400, y = 300, radiusX = 100, radiusY = 60, rotation = 0, color, fill, fillColor) {
         const c = this._resolveColor(color);
         const fc = fillColor ? this._resolveColor(fillColor) : c;
