@@ -198,6 +198,17 @@
         .history-item:last-child { border-bottom: none; }
         .history-item .time { color: rgba(255,255,255,0.25); font-size: 12px; min-width: 70px; }
         .history-item .text { flex: 1; }
+        .history-item .mode {
+            margin-left: 10px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 12px;
+            white-space: nowrap;
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+        .history-item .mode.ai { color: #9be7ff; background: rgba(79,172,254,0.14); }
+        .history-item .mode.canvas { color: #a8f0c6; background: rgba(46,204,113,0.12); }
+        .history-item .mode.fallback { color: #ffd89b; background: rgba(243,156,18,0.14); }
         .history-item .status { margin-left: 8px; }
 
         footer {
@@ -228,7 +239,7 @@
 <body>
     <header>
         <h1>🎨 AI 语音绘图</h1>
-        <p class="subtitle">用声音描绘你的创意 · Powered by DeepSeek</p>
+        <p class="subtitle">用声音描绘你的创意 · DeepSeek + CogView</p>
     </header>
 
     <div class="canvas-wrapper">
@@ -262,10 +273,10 @@
     </div>
 
     <footer>
-        持续聆听语音指令 · 支持圆形、矩形、线条、三角形、文字、颜色、位置等
+        持续聆听语音指令 · 基础图形走 Canvas，复杂对象走 AI 生图
     </footer>
 
-    <script src="/static/drawer.js?v=20260612-ai-image"></script>
-    <script src="/static/app.js?v=20260612-ai-image"></script>
+    <script src="/static/drawer.js?v=20260613-route-mode"></script>
+    <script src="/static/app.js?v=20260613-route-mode"></script>
 </body>
 </html>

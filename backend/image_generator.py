@@ -46,17 +46,27 @@ SAFE_CHARACTER_PROMPTS = {
 BASIC_WORDS = ("圆", "圆形", "矩形", "正方形", "三角形", "线", "点", "文字")
 
 
-def should_generate_image(text: str) -> bool:
+def classify_draw_route(text: str) -> dict:
     normalized = (text or "").strip().lower()
     if not normalized:
-        return False
+        return {"draw_mode": "none", "route_reason": "未识别到有效语音文本", "use_image": False}
+
     if any(word in normalized for word in ("生成图片", "生成一张", "画一幅", "画张", "照片", "插画", "海报")):
-        return True
+        return {"draw_mode": "ai_image", "route_reason": "用户请求图片/插画/海报类开放式创作", "use_image": True}
+
     if _match_character_prompt(normalized):
-        return True
+        return {"draw_mode": "ai_image", "route_reason": "命中角色类请求，需要 AI 生图保持视觉质量", "use_image": True}
+
     if any(word in normalized for word in COMPLEX_KEYWORDS):
-        return not _is_basic_geometry_request(normalized)
-    return False
+        if _is_basic_geometry_request(normalized):
+            return {"draw_mode": "canvas", "route_reason": "包含基础几何图形，优先使用可控 Canvas 指令", "use_image": False}
+        return {"draw_mode": "ai_image", "route_reason": "命中复杂对象/场景/风格关键词", "use_image": True}
+
+    return {"draw_mode": "canvas", "route_reason": "未命中复杂图片规则，使用低延迟 Canvas 指令绘图", "use_image": False}
+
+
+def should_generate_image(text: str) -> bool:
+    return classify_draw_route(text).get("use_image", False)
 
 
 def generate_image(text: str) -> dict:
