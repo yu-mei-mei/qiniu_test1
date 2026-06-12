@@ -28,18 +28,38 @@ def should_generate_image(text: str) -> bool:
 
 
 def generate_image(text: str) -> dict:
-    api_key = os.getenv("OPENAI_IMAGE_API_KEY") or os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        return {"ok": False, "error": "image_api_not_configured", "message": "未配置 OPENAI_IMAGE_API_KEY"}
-
-    client = OpenAI(api_key=api_key, base_url=os.getenv("OPENAI_IMAGE_BASE_URL") or None)
+    provider = os.getenv("IMAGE_PROVIDER", "openai").lower().strip()
     prompt = _build_prompt(text)
-    try:
-        response = client.images.generate(
-            model=os.getenv("OPENAI_IMAGE_MODEL", "gpt-image-1"),
+
+    if provider == "xiaomi":
+        return _generate_openai_compatible_image(
             prompt=prompt,
-            size=os.getenv("OPENAI_IMAGE_SIZE", "1024x1024"),
+            api_key=os.getenv("XIAOMI_IMAGE_API_KEY") or os.getenv("XIAOMI_API_KEY"),
+            base_url=os.getenv("XIAOMI_IMAGE_BASE_URL"),
+            model=os.getenv("XIAOMI_IMAGE_MODEL"),
+            size=os.getenv("XIAOMI_IMAGE_SIZE", "1024x1024"),
+            missing_message="未配置小米 MiMo 文生图接口参数",
         )
+
+    return _generate_openai_compatible_image(
+        prompt=prompt,
+        api_key=os.getenv("OPENAI_IMAGE_API_KEY") or os.getenv("OPENAI_API_KEY"),
+        base_url=os.getenv("OPENAI_IMAGE_BASE_URL") or None,
+        model=os.getenv("OPENAI_IMAGE_MODEL", "gpt-image-1"),
+        size=os.getenv("OPENAI_IMAGE_SIZE", "1024x1024"),
+        missing_message="未配置 OPENAI_IMAGE_API_KEY",
+    )
+
+
+def _generate_openai_compatible_image(prompt: str, api_key: str | None, base_url: str | None, model: str | None, size: str, missing_message: str) -> dict:
+    if not api_key or not model:
+        return {"ok": False, "error": "image_api_not_configured", "message": missing_message}
+    if os.getenv("IMAGE_PROVIDER", "openai").lower().strip() == "xiaomi" and not base_url:
+        return {"ok": False, "error": "image_api_not_configured", "message": "未配置 XIAOMI_IMAGE_BASE_URL"}
+
+    client = OpenAI(api_key=api_key, base_url=base_url)
+    try:
+        response = client.images.generate(model=model, prompt=prompt, size=size)
         item = response.data[0]
         b64 = getattr(item, "b64_json", None)
         if not b64:
