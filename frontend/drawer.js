@@ -269,6 +269,24 @@ class DrawEngine {
                 return this._drawPikachuTemplate(params);
             case 'cat':
                 return this._drawCatTemplate(params);
+            case 'dog':
+                return this._drawDogTemplate(params);
+            case 'rabbit':
+                return this._drawRabbitTemplate(params);
+            case 'fish':
+                return this._drawFishTemplate(params);
+            case 'flower':
+                return this._drawFlowerTemplate(params);
+            case 'car':
+                return this._drawCarTemplate(params);
+            case 'rocket':
+                return this._drawRocketTemplate(params);
+            case 'sea_scene':
+                return this._drawSeaSceneTemplate(params);
+            case 'forest_scene':
+                return this._drawForestSceneTemplate(params);
+            case 'person':
+                return this._drawPersonTemplate(params);
             case 'robot':
                 return this._drawRobotTemplate(params);
             case 'house_scene':
@@ -380,6 +398,419 @@ class DrawEngine {
         ctx.restore();
         return this._commit('template_cat');
     }
+
+    _drawDogTemplate() {
+        const ctx = this.ctx;
+        ctx.save();
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+
+        this._paintGradientBackground('#fff1d8', '#f8d9a5');
+        this._drawGroundShadow(400, 525, 170, 28);
+
+        const fur = '#c9823a';
+        const dark = '#3a2618';
+        const cream = '#ffe0ad';
+        const ear = '#8a4f2a';
+
+        // Tail.
+        ctx.beginPath();
+        ctx.moveTo(520, 400);
+        ctx.bezierCurveTo(640, 330, 610, 250, 548, 290);
+        ctx.strokeStyle = fur;
+        ctx.lineWidth = 28;
+        ctx.stroke();
+        ctx.strokeStyle = dark;
+        ctx.lineWidth = 5;
+        ctx.stroke();
+
+        // Body and head.
+        this._ellipsePatch(400, 405, 135, 115, 0, fur, dark, 5);
+        this._ellipsePatch(400, 255, 118, 96, 0, fur, dark, 5);
+        this._ellipsePatch(400, 286, 62, 42, 0, cream, 'rgba(0,0,0,0)', 0);
+
+        // Ears.
+        this._ellipsePatch(305, 250, 42, 82, -0.45, ear, dark, 5);
+        this._ellipsePatch(495, 250, 42, 82, 0.45, ear, dark, 5);
+
+        this._fillCircle(356, 238, 15, dark);
+        this._fillCircle(444, 238, 15, dark);
+        this._fillCircle(362, 232, 5, '#ffffff');
+        this._fillCircle(450, 232, 5, '#ffffff');
+        this._fillCircle(400, 276, 13, '#20140d');
+
+        ctx.beginPath();
+        ctx.moveTo(400, 290);
+        ctx.bezierCurveTo(382, 306, 365, 300, 356, 290);
+        ctx.moveTo(400, 290);
+        ctx.bezierCurveTo(418, 306, 435, 300, 444, 290);
+        ctx.strokeStyle = dark;
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        this._drawPaw(330, 505, '#a85f2e', dark);
+        this._drawPaw(470, 505, '#a85f2e', dark);
+        this._templateLabel('Canvas Dog');
+        ctx.restore();
+        return this._commit('template_dog');
+    }
+
+    _drawRabbitTemplate() {
+        const ctx = this.ctx;
+        ctx.save();
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+
+        this._paintGradientBackground('#f8fbff', '#e8f2ff');
+        this._drawGroundShadow(400, 525, 150, 26);
+
+        const fur = '#f7f0e8';
+        const ink = '#3a312b';
+        const pink = '#f5a3bd';
+
+        this._ellipsePatch(352, 150, 34, 112, -0.16, fur, ink, 5);
+        this._ellipsePatch(448, 150, 34, 112, 0.16, fur, ink, 5);
+        this._ellipsePatch(352, 155, 15, 78, -0.16, pink, 'rgba(0,0,0,0)', 0);
+        this._ellipsePatch(448, 155, 15, 78, 0.16, pink, 'rgba(0,0,0,0)', 0);
+        this._ellipsePatch(400, 410, 122, 132, 0, fur, ink, 5);
+        this._ellipsePatch(400, 260, 112, 96, 0, fur, ink, 5);
+        this._ellipsePatch(400, 430, 66, 82, 0, '#fffaf4', 'rgba(0,0,0,0)', 0);
+
+        this._fillCircle(360, 245, 14, ink);
+        this._fillCircle(440, 245, 14, ink);
+        this._fillCircle(365, 240, 5, '#ffffff');
+        this._fillCircle(445, 240, 5, '#ffffff');
+        this._fillCircle(400, 275, 9, pink);
+
+        ctx.beginPath();
+        ctx.moveTo(400, 284);
+        ctx.bezierCurveTo(385, 300, 372, 296, 364, 287);
+        ctx.moveTo(400, 284);
+        ctx.bezierCurveTo(415, 300, 428, 296, 436, 287);
+        ctx.strokeStyle = ink;
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        this._ellipsePatch(332, 522, 58, 24, -0.12, '#eee2d8', ink, 4);
+        this._ellipsePatch(468, 522, 58, 24, 0.12, '#eee2d8', ink, 4);
+        this._templateLabel('Canvas Rabbit');
+        ctx.restore();
+        return this._commit('template_rabbit');
+    }
+
+    _drawFishTemplate() {
+        const ctx = this.ctx;
+        ctx.save();
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+
+        this._paintGradientBackground('#b9f3ff', '#4aa3df');
+        this._drawBubbleSet();
+
+        const orange = '#ff9f1c';
+        const coral = '#ff6b6b';
+        const ink = '#1f3b4d';
+
+        this._ellipsePatch(405, 310, 155, 88, 0, orange, ink, 6);
+        this._drawTrianglePatch(245, 310, 145, 235, 145, 385, coral, ink);
+        this._drawTrianglePatch(378, 230, 430, 160, 470, 238, coral, ink);
+        this._drawTrianglePatch(395, 390, 455, 455, 482, 382, coral, ink);
+        this._fillCircle(485, 285, 20, '#ffffff');
+        this._fillCircle(492, 286, 9, ink);
+
+        ctx.beginPath();
+        ctx.moveTo(518, 325);
+        ctx.bezierCurveTo(500, 350, 470, 352, 450, 328);
+        ctx.strokeStyle = ink;
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        [340, 380, 420].forEach(x => {
+            ctx.beginPath();
+            ctx.arc(x, 310, 40, -0.9, 0.9);
+            ctx.strokeStyle = 'rgba(255,255,255,0.65)';
+            ctx.lineWidth = 5;
+            ctx.stroke();
+        });
+
+        this._templateLabel('Canvas Fish');
+        ctx.restore();
+        return this._commit('template_fish');
+    }
+
+    _drawFlowerTemplate() {
+        const ctx = this.ctx;
+        ctx.save();
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+
+        this._paintGradientBackground('#fff8e9', '#dff5c8');
+        ctx.strokeStyle = '#2f8f4e';
+        ctx.lineWidth = 14;
+        ctx.beginPath();
+        ctx.moveTo(400, 500);
+        ctx.bezierCurveTo(390, 420, 410, 360, 400, 300);
+        ctx.stroke();
+
+        this._ellipsePatch(350, 405, 62, 28, -0.4, '#5ec76b', '#2f8f4e', 4);
+        this._ellipsePatch(450, 430, 62, 28, 0.35, '#5ec76b', '#2f8f4e', 4);
+
+        const petals = [
+            [400, 230, 34, 76, 0], [400, 370, 34, 76, 0],
+            [330, 300, 76, 34, 0], [470, 300, 76, 34, 0],
+            [350, 250, 34, 72, -0.75], [450, 250, 34, 72, 0.75],
+            [350, 350, 34, 72, 0.75], [450, 350, 34, 72, -0.75],
+        ];
+        petals.forEach(([x, y, rx, ry, rot], i) => this._ellipsePatch(x, y, rx, ry, rot, i % 2 ? '#ff8fab' : '#ff6f91', '#ad3156', 4));
+        this._fillCircle(400, 300, 44, '#ffd166');
+        this._fillCircle(385, 292, 6, '#bf7b00');
+        this._fillCircle(412, 306, 6, '#bf7b00');
+        this._fillCircle(404, 282, 5, '#bf7b00');
+
+        this._templateLabel('Canvas Flower');
+        ctx.restore();
+        return this._commit('template_flower');
+    }
+
+    _drawCarTemplate() {
+        const ctx = this.ctx;
+        ctx.save();
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+
+        this._paintGradientBackground('#eef7ff', '#d6e6f5');
+        ctx.fillStyle = '#6c757d';
+        ctx.fillRect(0, 500, this.width, 100);
+        ctx.strokeStyle = 'rgba(255,255,255,0.65)';
+        ctx.lineWidth = 6;
+        ctx.setLineDash([40, 28]);
+        ctx.beginPath();
+        ctx.moveTo(0, 545);
+        ctx.lineTo(800, 545);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        const red = '#ef476f';
+        const ink = '#243447';
+        this._roundedRectPath(220, 330, 360, 120, 34);
+        ctx.fillStyle = red;
+        ctx.strokeStyle = ink;
+        ctx.lineWidth = 6;
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(300, 330);
+        ctx.lineTo(360, 255);
+        ctx.lineTo(470, 255);
+        ctx.lineTo(535, 330);
+        ctx.closePath();
+        ctx.fillStyle = '#ef476f';
+        ctx.fill();
+        ctx.stroke();
+
+        this._roundedRectPath(335, 272, 58, 48, 8);
+        ctx.fillStyle = '#9be7ff';
+        ctx.fill();
+        ctx.stroke();
+        this._roundedRectPath(415, 272, 70, 48, 8);
+        ctx.fill();
+        ctx.stroke();
+
+        this._fillCircle(310, 455, 42, ink);
+        this._fillCircle(490, 455, 42, ink);
+        this._fillCircle(310, 455, 20, '#dce8f2');
+        this._fillCircle(490, 455, 20, '#dce8f2');
+        this._fillCircle(565, 385, 12, '#ffd166');
+        this._fillCircle(235, 390, 10, '#ffe8a1');
+
+        this._templateLabel('Canvas Car');
+        ctx.restore();
+        return this._commit('template_car');
+    }
+
+    _drawRocketTemplate() {
+        const ctx = this.ctx;
+        ctx.save();
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+
+        this._paintGradientBackground('#0b1026', '#273469');
+        this._drawStars();
+
+        const ink = '#1d2338';
+        ctx.save();
+        ctx.translate(400, 300);
+        ctx.rotate(-0.18);
+
+        ctx.beginPath();
+        ctx.moveTo(0, -180);
+        ctx.bezierCurveTo(88, -90, 82, 80, 44, 170);
+        ctx.lineTo(-44, 170);
+        ctx.bezierCurveTo(-82, 80, -88, -90, 0, -180);
+        ctx.closePath();
+        ctx.fillStyle = '#f8f9fa';
+        ctx.strokeStyle = ink;
+        ctx.lineWidth = 6;
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(0, -180);
+        ctx.bezierCurveTo(42, -135, 52, -80, 48, -45);
+        ctx.lineTo(-48, -45);
+        ctx.bezierCurveTo(-52, -80, -42, -135, 0, -180);
+        ctx.closePath();
+        ctx.fillStyle = '#ef476f';
+        ctx.fill();
+        ctx.stroke();
+
+        this._fillCircle(0, 5, 36, '#64d2ff');
+        this._fillCircle(0, 5, 20, '#dff7ff');
+
+        this._drawTrianglePatch(-44, 100, -118, 176, -40, 164, '#ef476f', ink);
+        this._drawTrianglePatch(44, 100, 118, 176, 40, 164, '#ef476f', ink);
+
+        ctx.beginPath();
+        ctx.moveTo(-28, 170);
+        ctx.lineTo(0, 260);
+        ctx.lineTo(28, 170);
+        ctx.closePath();
+        ctx.fillStyle = '#ffd166';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(-18, 170);
+        ctx.lineTo(0, 225);
+        ctx.lineTo(18, 170);
+        ctx.closePath();
+        ctx.fillStyle = '#ff7a1a';
+        ctx.fill();
+        ctx.restore();
+
+        this._templateLabel('Canvas Rocket', '#ffffff');
+        ctx.restore();
+        return this._commit('template_rocket');
+    }
+
+    _drawSeaSceneTemplate() {
+        const ctx = this.ctx;
+        ctx.save();
+        this._paintGradientBackground('#83d9ff', '#fff0c2');
+        this._fillCircle(650, 115, 52, '#ffd166');
+
+        ctx.fillStyle = '#1f9bd1';
+        ctx.fillRect(0, 285, this.width, 170);
+        for (let y = 315; y <= 420; y += 34) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            for (let x = 0; x <= 820; x += 80) ctx.quadraticCurveTo(x + 40, y - 18, x + 80, y);
+            ctx.strokeStyle = 'rgba(255,255,255,0.65)';
+            ctx.lineWidth = 5;
+            ctx.stroke();
+        }
+
+        ctx.fillStyle = '#f4c46d';
+        ctx.beginPath();
+        ctx.moveTo(0, 430);
+        ctx.quadraticCurveTo(280, 380, 800, 440);
+        ctx.lineTo(800, 600);
+        ctx.lineTo(0, 600);
+        ctx.closePath();
+        ctx.fill();
+
+        this._drawPalmTree(160, 405, 1.0);
+        this._drawBeachUmbrella(540, 420);
+        this._templateLabel('Canvas Beach Scene');
+        ctx.restore();
+        return this._commit('template_sea_scene');
+    }
+
+    _drawForestSceneTemplate() {
+        const ctx = this.ctx;
+        ctx.save();
+        this._paintGradientBackground('#c8f7dc', '#7cc576');
+        ctx.fillStyle = '#5ca85d';
+        ctx.fillRect(0, 420, this.width, 180);
+
+        for (let i = 0; i < 9; i++) {
+            const x = 65 + i * 88;
+            const scale = 0.72 + (i % 3) * 0.18;
+            this._drawPineTree(x, 350 + (i % 2) * 35, scale);
+        }
+        this._fillCircle(680, 95, 38, '#ffd166');
+        this._drawPathTrail();
+        this._templateLabel('Canvas Forest Scene');
+        ctx.restore();
+        return this._commit('template_forest_scene');
+    }
+
+    _drawPersonTemplate() {
+        const ctx = this.ctx;
+        ctx.save();
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        this._paintGradientBackground('#f0f7ff', '#ffe6d5');
+        this._drawGroundShadow(400, 532, 120, 24);
+
+        const ink = '#2d2a32';
+        const skin = '#f2b18f';
+        const hair = '#4b2e24';
+        const shirt = '#4facfe';
+        const pants = '#34495e';
+
+        this._ellipsePatch(400, 190, 72, 76, 0, skin, ink, 5);
+        ctx.beginPath();
+        ctx.arc(400, 168, 76, Math.PI * 1.05, Math.PI * 1.95);
+        ctx.fillStyle = hair;
+        ctx.fill();
+        ctx.strokeStyle = ink;
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        this._fillCircle(374, 190, 8, ink);
+        this._fillCircle(426, 190, 8, ink);
+        ctx.beginPath();
+        ctx.arc(400, 216, 24, 0.15, Math.PI - 0.15);
+        ctx.strokeStyle = ink;
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        this._roundedRectPath(330, 270, 140, 160, 28);
+        ctx.fillStyle = shirt;
+        ctx.strokeStyle = ink;
+        ctx.lineWidth = 5;
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(330, 305);
+        ctx.lineTo(245, 390);
+        ctx.moveTo(470, 305);
+        ctx.lineTo(555, 390);
+        ctx.strokeStyle = ink;
+        ctx.lineWidth = 18;
+        ctx.stroke();
+        this._fillCircle(242, 392, 18, skin);
+        this._fillCircle(558, 392, 18, skin);
+
+        this._roundedRectPath(340, 430, 48, 96, 16);
+        ctx.fillStyle = pants;
+        ctx.fill();
+        ctx.stroke();
+        this._roundedRectPath(412, 430, 48, 96, 16);
+        ctx.fill();
+        ctx.stroke();
+        this._roundedRectPath(320, 515, 78, 26, 12);
+        ctx.fillStyle = '#2d2a32';
+        ctx.fill();
+        this._roundedRectPath(402, 515, 78, 26, 12);
+        ctx.fill();
+
+        this._templateLabel('Canvas Person');
+        ctx.restore();
+        return this._commit('template_person');
+    }
+
 
     _drawRobotTemplate() {
         const ctx = this.ctx;
@@ -852,6 +1283,148 @@ class DrawEngine {
         this._fillCircle(35, 42, 38, '#38a85a');
         ctx.restore();
     }
+
+    _paintGradientBackground(top, bottom) {
+        const bg = this.ctx.createLinearGradient(0, 0, 0, this.height);
+        bg.addColorStop(0, top);
+        bg.addColorStop(1, bottom);
+        this.ctx.fillStyle = bg;
+        this.ctx.fillRect(0, 0, this.width, this.height);
+    }
+
+    _drawGroundShadow(x, y, rx, ry) {
+        this.ctx.beginPath();
+        this.ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+        this.ctx.fillStyle = 'rgba(40, 30, 20, 0.16)';
+        this.ctx.fill();
+    }
+
+    _ellipsePatch(x, y, rx, ry, rotation, fill, stroke, width = 4) {
+        const ctx = this.ctx;
+        ctx.beginPath();
+        ctx.ellipse(x, y, rx, ry, rotation || 0, 0, Math.PI * 2);
+        ctx.fillStyle = fill;
+        ctx.fill();
+        if (stroke !== 'rgba(0,0,0,0)' && width > 0) {
+            ctx.strokeStyle = stroke;
+            ctx.lineWidth = width;
+            ctx.stroke();
+        }
+    }
+
+    _templateLabel(text, color = 'rgba(45, 33, 24, 0.72)') {
+        const ctx = this.ctx;
+        ctx.font = '22px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = color;
+        ctx.fillText(text, 400, 575);
+    }
+
+    _drawBubbleSet() {
+        [[110, 120, 10], [155, 210, 16], [650, 150, 13], [700, 250, 9], [600, 365, 12]].forEach(([x, y, r]) => {
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, r, 0, Math.PI * 2);
+            this.ctx.strokeStyle = 'rgba(255,255,255,0.72)';
+            this.ctx.lineWidth = 3;
+            this.ctx.stroke();
+        });
+    }
+
+    _drawStars() {
+        const ctx = this.ctx;
+        ctx.fillStyle = 'rgba(255,255,255,0.86)';
+        [[92, 80], [160, 180], [695, 105], [620, 230], [115, 410], [710, 425], [300, 90], [540, 70]].forEach(([x, y]) => {
+            ctx.beginPath();
+            ctx.arc(x, y, 3, 0, Math.PI * 2);
+            ctx.fill();
+        });
+    }
+
+    _drawPalmTree(x, y, scale = 1) {
+        const ctx = this.ctx;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+        ctx.strokeStyle = '#8b5a2b';
+        ctx.lineWidth = 18;
+        ctx.beginPath();
+        ctx.moveTo(0, 80);
+        ctx.bezierCurveTo(20, 10, 10, -55, 30, -115);
+        ctx.stroke();
+        ctx.fillStyle = '#2e9f5b';
+        for (let i = 0; i < 7; i++) {
+            ctx.save();
+            ctx.rotate((i - 3) * 0.48);
+            ctx.beginPath();
+            ctx.moveTo(28, -118);
+            ctx.quadraticCurveTo(82, -155, 142, -120);
+            ctx.quadraticCurveTo(82, -105, 28, -118);
+            ctx.fill();
+            ctx.restore();
+        }
+        ctx.restore();
+    }
+
+    _drawBeachUmbrella(x, y) {
+        const ctx = this.ctx;
+        ctx.strokeStyle = '#7a4a2b';
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        ctx.moveTo(x, y - 10);
+        ctx.lineTo(x + 35, y + 105);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x - 110, y - 20);
+        ctx.quadraticCurveTo(x, y - 120, x + 110, y - 20);
+        ctx.closePath();
+        ctx.fillStyle = '#ff6b6b';
+        ctx.fill();
+        ctx.strokeStyle = '#9b2c2c';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x, y - 102);
+        ctx.lineTo(x, y - 20);
+        ctx.moveTo(x - 55, y - 70);
+        ctx.lineTo(x - 36, y - 20);
+        ctx.moveTo(x + 55, y - 70);
+        ctx.lineTo(x + 36, y - 20);
+        ctx.stroke();
+    }
+
+    _drawPineTree(x, y, scale = 1) {
+        const ctx = this.ctx;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+        ctx.fillStyle = '#6b4328';
+        ctx.fillRect(-12, 58, 24, 82);
+        [['#1f7a3f', -42, 55], ['#27934d', -55, 15], ['#33a85d', -68, -28]].forEach(([color, left, top]) => {
+            ctx.beginPath();
+            ctx.moveTo(0, top);
+            ctx.lineTo(left, top + 95);
+            ctx.lineTo(-left, top + 95);
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+        });
+        ctx.restore();
+    }
+
+    _drawPathTrail() {
+        const ctx = this.ctx;
+        ctx.beginPath();
+        ctx.moveTo(380, 600);
+        ctx.bezierCurveTo(360, 540, 420, 500, 390, 440);
+        ctx.bezierCurveTo(360, 390, 410, 360, 395, 315);
+        ctx.lineTo(455, 315);
+        ctx.bezierCurveTo(475, 370, 435, 405, 470, 460);
+        ctx.bezierCurveTo(505, 515, 470, 560, 520, 600);
+        ctx.closePath();
+        ctx.fillStyle = '#d8b27c';
+        ctx.fill();
+    }
+
 
     // ===== 样式控制 =====
 
