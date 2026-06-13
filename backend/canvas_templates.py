@@ -1,6 +1,32 @@
 """Canvas template routing for common complex objects."""
 
 TEMPLATES = {
+
+    "cylinder": {
+        "aliases": ("圆柱", "圆柱体", "cylinder"),
+        "label": "圆柱体",
+        "tts": "好的，我用 Canvas 模板画了一个圆柱体。",
+    },
+    "cone": {
+        "aliases": ("圆锥", "圆锥体", "cone"),
+        "label": "圆锥体",
+        "tts": "好的，我用 Canvas 模板画了一个圆锥体。",
+    },
+    "triangular_pyramid": {
+        "aliases": ("三角锥", "三棱锥", "四面体", "triangularpyramid", "tetrahedron"),
+        "label": "三棱锥",
+        "tts": "好的，我用 Canvas 模板画了一个三棱锥。",
+    },
+    "cube": {
+        "aliases": ("立方体", "正方体", "cube"),
+        "label": "立方体",
+        "tts": "好的，我用 Canvas 模板画了一个立方体。",
+    },
+    "sphere": {
+        "aliases": ("球体", "球", "sphere"),
+        "label": "球体",
+        "tts": "好的，我用 Canvas 模板画了一个球体。",
+    },
     "pikachu": {
         "aliases": ("皮卡丘", "pikachu"),
         "label": "皮卡丘",
