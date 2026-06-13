@@ -64,7 +64,7 @@
 | 路由 | 适用指令 | 原因 |
 |------|----------|------|
 | Canvas 绘图 | 圆形、矩形、三角形、线条、点、文字、颜色、位置、清空、撤销、重做等基础操作 | 可参数化、低延迟、可控性强 |
-| Canvas 模板 | 皮卡丘、小猫、小狗、兔子、鱼、花朵、汽车、火箭、机器人、人物、房子/海边/森林场景等常见复杂对象 | 使用手写模板固定构图和细节，比临时拆命令更稳定 |
+| Canvas 模板 | 圆柱、圆锥、三棱锥、立方体、球体，以及皮卡丘、小猫、小狗、兔子、鱼、花朵、汽车、火箭、机器人、人物、房子/海边/森林场景等常见复杂对象 | 使用手写模板固定构图和细节，比临时拆命令更稳定 |
 | AI 生图 | 熊大、熊二、哆啦A梦/哆唻A梦、机器猫、蓝胖子、开放动物、复杂角色等 | 视觉质量依赖整体形象，超出模板库时交给图片模型 |
 | AI 生图 | 森林、城市、海边、宇宙、城堡、插画、海报、照片、赛博朋克等复杂场景或风格化创作 | 难以精确拆成有限 Canvas 命令，交给图像模型更合适 |
 | Canvas 回退 | AI 生图失败、供应商过滤或接口异常 | 保证主流程不中断，仍能用结构化绘图命令给出结果 |
@@ -106,7 +106,7 @@
 - [x] 行列布局（排成一行/一列，等距分布）
 - [x] 对称布局
 - [x] 复杂对象自动拆解（"画一个房子"→ 矩形+三角形）
-- [x] 常见复杂对象模板库（皮卡丘、小猫、小狗、兔子、鱼、花朵、汽车、火箭、机器人、人物、房子/海边/森林场景走高质量 Canvas 模板）
+- [x] 常见复杂对象模板库（圆柱、圆锥、三棱锥、立方体、球体，以及皮卡丘、小猫、小狗、兔子、鱼、花朵、汽车、火箭、机器人、人物、房子/海边/森林场景走高质量 Canvas 模板）
 - [x] 可选 AI 生图模式（复杂对象优先生成图片，未配置 Key 时回退 Canvas 命令）
 - [x] 角色类请求增强（熊大、熊二、哆啦A梦/哆唻A梦、机器猫、蓝胖子等别名强制走 AI 生图并补充外观提示）
 
@@ -232,7 +232,7 @@ POST /api/parse
 | `draw_polygon` | 画多边形 | points, color, fill |
 | `draw_arc` | 画圆弧 | x, y, radius, start_angle, end_angle, color, width |
 | `draw_path` | 画自由曲线路径 | segments, color, width, fill, close |
-| `draw_template` | 绘制 Canvas 复杂对象模板 | name（pikachu/cat/dog/rabbit/fish/flower/car/rocket/robot/person/house_scene/sea_scene/forest_scene） |
+| `draw_template` | 绘制 Canvas 复杂对象模板 | name（cylinder/cone/triangular_pyramid/cube/sphere/pikachu/cat/dog/rabbit/fish/flower/car/rocket/robot/person/house_scene/sea_scene/forest_scene） |
 | `set_style` | 设置默认样式 | color, fill, line_width |
 | `clear` | 清空画布 | — |
 | `undo` | 撤销 | — |

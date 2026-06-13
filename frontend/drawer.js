@@ -265,6 +265,16 @@ class DrawEngine {
 
     drawTemplate(name, params = {}) {
         switch (name) {
+            case 'cylinder':
+                return this._drawCylinderTemplate(params);
+            case 'cone':
+                return this._drawConeTemplate(params);
+            case 'triangular_pyramid':
+                return this._drawTriangularPyramidTemplate(params);
+            case 'cube':
+                return this._drawCubeTemplate(params);
+            case 'sphere':
+                return this._drawSphereTemplate(params);
             case 'pikachu':
                 return this._drawPikachuTemplate(params);
             case 'cat':
@@ -295,6 +305,171 @@ class DrawEngine {
                 return false;
         }
     }
+
+    _drawCylinderTemplate() {
+        const ctx = this.ctx;
+        ctx.save();
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        this._paintGradientBackground('#e8f4ff', '#cfe9f8');
+        this._drawGroundShadow(400, 520, 150, 24);
+
+        const x = 400, topY = 185, bottomY = 455, rx = 118, ry = 38;
+        const side = ctx.createLinearGradient(x - rx, 0, x + rx, 0);
+        side.addColorStop(0, '#9fb4c7');
+        side.addColorStop(0.5, '#f5f8fb');
+        side.addColorStop(1, '#7f96aa');
+
+        ctx.beginPath();
+        ctx.moveTo(x - rx, topY);
+        ctx.lineTo(x - rx, bottomY);
+        ctx.ellipse(x, bottomY, rx, ry, 0, Math.PI, 0, true);
+        ctx.lineTo(x + rx, topY);
+        ctx.ellipse(x, topY, rx, ry, 0, 0, Math.PI, true);
+        ctx.closePath();
+        ctx.fillStyle = side;
+        ctx.strokeStyle = '#243447';
+        ctx.lineWidth = 5;
+        ctx.fill();
+        ctx.stroke();
+
+        this._ellipsePatch(x, topY, rx, ry, 0, '#eef5fb', '#243447', 5);
+        ctx.beginPath();
+        ctx.ellipse(x, bottomY, rx, ry, 0, 0, Math.PI);
+        ctx.strokeStyle = '#243447';
+        ctx.lineWidth = 5;
+        ctx.stroke();
+        ctx.setLineDash([10, 8]);
+        ctx.beginPath();
+        ctx.ellipse(x, bottomY, rx, ry, 0, Math.PI, 0);
+        ctx.strokeStyle = 'rgba(36,52,71,0.45)';
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        this._templateLabel('Canvas Cylinder');
+        ctx.restore();
+        return this._commit('template_cylinder');
+    }
+
+    _drawConeTemplate() {
+        const ctx = this.ctx;
+        ctx.save();
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        this._paintGradientBackground('#f3f8ff', '#dcecff');
+        this._drawGroundShadow(400, 512, 150, 24);
+
+        const apex = { x: 400, y: 125 };
+        const base = { x: 400, y: 465, rx: 145, ry: 42 };
+        const fill = ctx.createLinearGradient(260, 0, 540, 0);
+        fill.addColorStop(0, '#b7c4d6');
+        fill.addColorStop(0.55, '#f6f7fb');
+        fill.addColorStop(1, '#8798ad');
+
+        ctx.beginPath();
+        ctx.moveTo(apex.x, apex.y);
+        ctx.lineTo(base.x - base.rx, base.y);
+        ctx.ellipse(base.x, base.y, base.rx, base.ry, 0, Math.PI, 0, true);
+        ctx.lineTo(apex.x, apex.y);
+        ctx.closePath();
+        ctx.fillStyle = fill;
+        ctx.strokeStyle = '#243447';
+        ctx.lineWidth = 5;
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.ellipse(base.x, base.y, base.rx, base.ry, 0, 0, Math.PI);
+        ctx.stroke();
+        ctx.setLineDash([10, 8]);
+        ctx.beginPath();
+        ctx.ellipse(base.x, base.y, base.rx, base.ry, 0, Math.PI, 0);
+        ctx.strokeStyle = 'rgba(36,52,71,0.45)';
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        this._templateLabel('Canvas Cone');
+        ctx.restore();
+        return this._commit('template_cone');
+    }
+
+    _drawTriangularPyramidTemplate() {
+        const ctx = this.ctx;
+        ctx.save();
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        this._paintGradientBackground('#eef8ff', '#d9ecf5');
+        this._drawGroundShadow(400, 525, 190, 26);
+
+        const top = { x: 400, y: 130 };
+        const left = { x: 245, y: 470 };
+        const right = { x: 585, y: 470 };
+        const back = { x: 430, y: 360 };
+
+        this._polygonPatch([top, left, back], '#d7dde4', '#1f2937', 5);
+        this._polygonPatch([top, back, right], '#bcc7d2', '#1f2937', 5);
+        this._polygonPatch([left, right, back], '#aeb9c6', '#1f2937', 5);
+        ctx.beginPath();
+        ctx.moveTo(top.x, top.y);
+        ctx.lineTo(back.x, back.y);
+        ctx.moveTo(left.x, left.y);
+        ctx.lineTo(right.x, right.y);
+        ctx.strokeStyle = '#111827';
+        ctx.lineWidth = 5;
+        ctx.stroke();
+
+        this._templateLabel('Canvas Triangular Pyramid');
+        ctx.restore();
+        return this._commit('template_triangular_pyramid');
+    }
+
+    _drawCubeTemplate() {
+        const ctx = this.ctx;
+        ctx.save();
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        this._paintGradientBackground('#f2f7ff', '#d8e8f4');
+        this._drawGroundShadow(405, 520, 170, 24);
+
+        const front = [{ x: 290, y: 260 }, { x: 485, y: 260 }, { x: 485, y: 455 }, { x: 290, y: 455 }];
+        const top = [{ x: 290, y: 260 }, { x: 380, y: 175 }, { x: 575, y: 175 }, { x: 485, y: 260 }];
+        const side = [{ x: 485, y: 260 }, { x: 575, y: 175 }, { x: 575, y: 370 }, { x: 485, y: 455 }];
+        this._polygonPatch(top, '#dce7f2', '#243447', 5);
+        this._polygonPatch(side, '#aab8c8', '#243447', 5);
+        this._polygonPatch(front, '#c7d3df', '#243447', 5);
+
+        this._templateLabel('Canvas Cube');
+        ctx.restore();
+        return this._commit('template_cube');
+    }
+
+    _drawSphereTemplate() {
+        const ctx = this.ctx;
+        ctx.save();
+        this._paintGradientBackground('#f4fbff', '#dbeef8');
+        this._drawGroundShadow(400, 518, 145, 24);
+
+        const gradient = ctx.createRadialGradient(350, 245, 20, 400, 330, 150);
+        gradient.addColorStop(0, '#ffffff');
+        gradient.addColorStop(0.38, '#b8d7ee');
+        gradient.addColorStop(1, '#4f7fa3');
+        this._ellipsePatch(400, 330, 145, 145, 0, gradient, '#243447', 5);
+
+        ctx.beginPath();
+        ctx.ellipse(400, 330, 95, 145, 0, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(36,52,71,0.38)';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.ellipse(400, 330, 145, 42, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        this._fillCircle(348, 258, 22, 'rgba(255,255,255,0.85)');
+
+        this._templateLabel('Canvas Sphere');
+        ctx.restore();
+        return this._commit('template_sphere');
+    }
+
 
     _drawCatTemplate() {
         const ctx = this.ctx;
@@ -1283,6 +1458,20 @@ class DrawEngine {
         this._fillCircle(35, 42, 38, '#38a85a');
         ctx.restore();
     }
+
+    _polygonPatch(points, fill, stroke, width = 4) {
+        const ctx = this.ctx;
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+        ctx.closePath();
+        ctx.fillStyle = fill;
+        ctx.fill();
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = width;
+        ctx.stroke();
+    }
+
 
     _paintGradientBackground(top, bottom) {
         const bg = this.ctx.createLinearGradient(0, 0, 0, this.height);
