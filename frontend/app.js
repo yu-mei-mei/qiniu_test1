@@ -253,19 +253,6 @@ function getDrawModeInfo(mode) {
     return map[mode] || { label: '', className: '', reason: '' };
 }
 
-
-function findDrawingTemplate(text) {
-    const normalized = (text || '').toLowerCase();
-    if (normalized.includes('皮卡丘') || normalized.includes('pikachu')) {
-        return {
-            name: 'pikachu',
-            label: '皮卡丘',
-            tts: '好的，我画了一个皮卡丘。',
-        };
-    }
-    return null;
-}
-
 // ===== 启动 =====
 document.addEventListener('DOMContentLoaded', () => {
     const drawer = new DrawEngine('drawCanvas');
@@ -289,16 +276,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 voice.addHistory(text || 'AI 图片', '✅', result.draw_mode || 'ai_image', result.route_reason);
                 voice.updateCanvasInfo(drawer.getStatus());
                 if (result.tts) await speak(result.tts);
-                return;
-            }
-
-            const template = findDrawingTemplate(text);
-            if (template) {
-                drawer.clear();
-                drawer.drawTemplate(template.name);
-                voice.addHistory(template.label, '✅', 'canvas_template', '命中本地 Canvas 模板');
-                voice.updateCanvasInfo(drawer.getStatus());
-                await speak(template.tts);
                 return;
             }
 

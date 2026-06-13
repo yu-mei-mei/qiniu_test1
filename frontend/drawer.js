@@ -263,11 +263,322 @@ class DrawEngine {
 
     // ===== 模板绘制 =====
 
-    drawTemplate(name) {
-        if (name === 'pikachu') {
-            return this._drawPikachuTemplate();
+    drawTemplate(name, params = {}) {
+        switch (name) {
+            case 'pikachu':
+                return this._drawPikachuTemplate(params);
+            case 'cat':
+                return this._drawCatTemplate(params);
+            case 'robot':
+                return this._drawRobotTemplate(params);
+            case 'house_scene':
+                return this._drawHouseSceneTemplate(params);
+            default:
+                return false;
         }
-        return false;
+    }
+
+    _drawCatTemplate() {
+        const ctx = this.ctx;
+        ctx.save();
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        ctx.lineWidth = 5;
+
+        const fur = '#f49b38';
+        const furDark = '#d46f1f';
+        const cream = '#ffe0a6';
+        const ink = '#2d2118';
+        const pink = '#f28aa8';
+
+        const bg = ctx.createLinearGradient(0, 0, 0, this.height);
+        bg.addColorStop(0, '#fff7df');
+        bg.addColorStop(1, '#f7e8c2');
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, this.width, this.height);
+
+        // Soft ground shadow.
+        ctx.beginPath();
+        ctx.ellipse(400, 525, 175, 30, 0, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(90, 60, 30, 0.16)';
+        ctx.fill();
+
+        // Tail behind the body.
+        ctx.beginPath();
+        ctx.moveTo(510, 405);
+        ctx.bezierCurveTo(650, 345, 670, 210, 565, 190);
+        ctx.bezierCurveTo(520, 182, 510, 242, 562, 258);
+        ctx.strokeStyle = furDark;
+        ctx.lineWidth = 36;
+        ctx.stroke();
+        ctx.strokeStyle = ink;
+        ctx.lineWidth = 5;
+        ctx.stroke();
+
+        // Body and belly.
+        ctx.beginPath();
+        ctx.ellipse(400, 395, 125, 145, 0, 0, Math.PI * 2);
+        ctx.fillStyle = fur;
+        ctx.strokeStyle = ink;
+        ctx.lineWidth = 5;
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.ellipse(400, 420, 72, 86, 0, 0, Math.PI * 2);
+        ctx.fillStyle = cream;
+        ctx.fill();
+
+        // Head.
+        ctx.beginPath();
+        ctx.ellipse(400, 245, 128, 105, 0, 0, Math.PI * 2);
+        ctx.fillStyle = fur;
+        ctx.strokeStyle = ink;
+        ctx.fill();
+        ctx.stroke();
+
+        // Ears.
+        this._drawTrianglePatch(306, 190, 286, 62, 385, 148, fur, ink);
+        this._drawTrianglePatch(494, 190, 514, 62, 415, 148, fur, ink);
+        this._drawTrianglePatch(319, 170, 303, 98, 367, 152, pink, 'rgba(0,0,0,0)');
+        this._drawTrianglePatch(481, 170, 497, 98, 433, 152, pink, 'rgba(0,0,0,0)');
+
+        // Face.
+        this._fillCircle(355, 235, 18, ink);
+        this._fillCircle(445, 235, 18, ink);
+        this._fillCircle(362, 228, 6, '#ffffff');
+        this._fillCircle(452, 228, 6, '#ffffff');
+        this._fillCircle(400, 270, 9, '#5b2b1b');
+
+        ctx.beginPath();
+        ctx.moveTo(400, 279);
+        ctx.bezierCurveTo(385, 292, 366, 292, 355, 282);
+        ctx.moveTo(400, 279);
+        ctx.bezierCurveTo(415, 292, 434, 292, 445, 282);
+        ctx.strokeStyle = ink;
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        // Whiskers.
+        ctx.lineWidth = 3;
+        [[325, 266, 260, 246], [326, 282, 258, 286], [326, 298, 268, 326], [475, 266, 540, 246], [474, 282, 542, 286], [474, 298, 532, 326]].forEach(([x1, y1, x2, y2]) => {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+        });
+
+        // Paws.
+        this._drawPaw(330, 520, furDark, ink);
+        this._drawPaw(470, 520, furDark, ink);
+
+        ctx.font = '22px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = 'rgba(45, 33, 24, 0.72)';
+        ctx.fillText('Canvas Cat', 400, 575);
+
+        ctx.restore();
+        return this._commit('template_cat');
+    }
+
+    _drawRobotTemplate() {
+        const ctx = this.ctx;
+        ctx.save();
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+
+        const bg = ctx.createLinearGradient(0, 0, this.width, this.height);
+        bg.addColorStop(0, '#e9fbff');
+        bg.addColorStop(1, '#d8e7ff');
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, this.width, this.height);
+
+        const metal = '#9fb4c7';
+        const dark = '#243447';
+        const panel = '#dce8f2';
+        const blue = '#35c5ff';
+        const yellow = '#ffd166';
+
+        ctx.strokeStyle = dark;
+        ctx.lineWidth = 6;
+
+        // Antenna.
+        ctx.beginPath();
+        ctx.moveTo(400, 118);
+        ctx.lineTo(400, 76);
+        ctx.stroke();
+        this._fillCircle(400, 66, 14, '#ff5c7a');
+
+        // Head.
+        this._roundedRectPath(285, 125, 230, 160, 28);
+        ctx.fillStyle = metal;
+        ctx.fill();
+        ctx.stroke();
+
+        // Face panel.
+        this._roundedRectPath(318, 162, 164, 82, 18);
+        ctx.fillStyle = '#172331';
+        ctx.fill();
+
+        this._fillCircle(365, 202, 18, blue);
+        this._fillCircle(435, 202, 18, blue);
+        ctx.beginPath();
+        ctx.moveTo(370, 238);
+        ctx.lineTo(430, 238);
+        ctx.strokeStyle = blue;
+        ctx.lineWidth = 5;
+        ctx.stroke();
+
+        // Ears.
+        this._roundedRectPath(252, 175, 34, 74, 12);
+        ctx.fillStyle = '#71869a';
+        ctx.fill();
+        ctx.strokeStyle = dark;
+        ctx.lineWidth = 5;
+        ctx.stroke();
+        this._roundedRectPath(514, 175, 34, 74, 12);
+        ctx.fill();
+        ctx.stroke();
+
+        // Neck and body.
+        this._roundedRectPath(365, 285, 70, 42, 12);
+        ctx.fillStyle = '#71869a';
+        ctx.fill();
+        ctx.stroke();
+
+        this._roundedRectPath(270, 320, 260, 180, 34);
+        ctx.fillStyle = metal;
+        ctx.fill();
+        ctx.stroke();
+
+        this._roundedRectPath(320, 350, 160, 92, 18);
+        ctx.fillStyle = panel;
+        ctx.fill();
+        ctx.stroke();
+
+        // Buttons and gauge.
+        this._fillCircle(355, 396, 14, '#ef476f');
+        this._fillCircle(400, 396, 14, yellow);
+        this._fillCircle(445, 396, 14, '#06d6a0');
+        ctx.beginPath();
+        ctx.arc(400, 438, 34, Math.PI, 0);
+        ctx.strokeStyle = dark;
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(400, 438);
+        ctx.lineTo(424, 418);
+        ctx.stroke();
+
+        // Arms and legs.
+        this._drawRobotArm(270, 360, 205, 438, -1);
+        this._drawRobotArm(530, 360, 595, 438, 1);
+        this._drawRobotLeg(340, 500);
+        this._drawRobotLeg(460, 500);
+
+        ctx.font = '22px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = 'rgba(36, 52, 71, 0.7)';
+        ctx.fillText('Canvas Robot', 400, 575);
+
+        ctx.restore();
+        return this._commit('template_robot');
+    }
+
+    _drawHouseSceneTemplate() {
+        const ctx = this.ctx;
+        ctx.save();
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+
+        const sky = ctx.createLinearGradient(0, 0, 0, this.height);
+        sky.addColorStop(0, '#8bd3ff');
+        sky.addColorStop(0.7, '#dff6ff');
+        sky.addColorStop(1, '#c9f2b6');
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, this.width, this.height);
+
+        // Sun and clouds.
+        this._fillCircle(100, 95, 42, '#ffd166');
+        this._drawCloud(610, 95, 1.0);
+        this._drawCloud(190, 145, 0.78);
+
+        // Hills.
+        ctx.beginPath();
+        ctx.moveTo(0, 420);
+        ctx.bezierCurveTo(170, 320, 290, 395, 420, 350);
+        ctx.bezierCurveTo(560, 305, 680, 360, 800, 325);
+        ctx.lineTo(800, 600);
+        ctx.lineTo(0, 600);
+        ctx.closePath();
+        ctx.fillStyle = '#7cc576';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(0, 475);
+        ctx.bezierCurveTo(220, 390, 430, 490, 800, 420);
+        ctx.lineTo(800, 600);
+        ctx.lineTo(0, 600);
+        ctx.closePath();
+        ctx.fillStyle = '#4fa95f';
+        ctx.fill();
+
+        // House body.
+        ctx.strokeStyle = '#3d2b1f';
+        ctx.lineWidth = 6;
+        this._roundedRectPath(270, 320, 260, 170, 10);
+        ctx.fillStyle = '#f6c06a';
+        ctx.fill();
+        ctx.stroke();
+
+        // Roof.
+        ctx.beginPath();
+        ctx.moveTo(240, 325);
+        ctx.lineTo(400, 210);
+        ctx.lineTo(560, 325);
+        ctx.closePath();
+        ctx.fillStyle = '#b84c35';
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(400, 210);
+        ctx.lineTo(585, 342);
+        ctx.strokeStyle = 'rgba(61, 43, 31, 0.35)';
+        ctx.lineWidth = 10;
+        ctx.stroke();
+
+        // Door and windows.
+        this._roundedRectPath(375, 395, 58, 95, 12);
+        ctx.fillStyle = '#7a4a2b';
+        ctx.fill();
+        ctx.strokeStyle = '#3d2b1f';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        this._fillCircle(420, 443, 5, '#ffd166');
+
+        this._drawWindow(300, 355);
+        this._drawWindow(455, 355);
+
+        // Trees and path.
+        this._drawTree(165, 385, 1.0);
+        this._drawTree(645, 400, 0.85);
+        ctx.beginPath();
+        ctx.moveTo(402, 490);
+        ctx.bezierCurveTo(360, 535, 330, 560, 300, 600);
+        ctx.lineTo(500, 600);
+        ctx.bezierCurveTo(470, 560, 442, 535, 430, 490);
+        ctx.closePath();
+        ctx.fillStyle = '#d8b27c';
+        ctx.fill();
+
+        ctx.font = '22px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = 'rgba(61, 43, 31, 0.72)';
+        ctx.fillText('Canvas House Scene', 400, 575);
+
+        ctx.restore();
+        return this._commit('template_house_scene');
     }
 
     _drawPikachuTemplate() {
@@ -421,6 +732,127 @@ class DrawEngine {
         this.ctx.fill();
     }
 
+    _drawTrianglePatch(x1, y1, x2, y2, x3, y3, fill, stroke) {
+        const ctx = this.ctx;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.lineTo(x3, y3);
+        ctx.closePath();
+        ctx.fillStyle = fill;
+        ctx.fill();
+        if (stroke !== 'rgba(0,0,0,0)') {
+            ctx.strokeStyle = stroke;
+            ctx.stroke();
+        }
+    }
+
+    _drawPaw(x, y, fill, stroke) {
+        const ctx = this.ctx;
+        ctx.beginPath();
+        ctx.ellipse(x, y, 42, 24, 0, 0, Math.PI * 2);
+        ctx.fillStyle = fill;
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 4;
+        ctx.fill();
+        ctx.stroke();
+        [x - 18, x, x + 18].forEach(px => this._fillCircle(px, y - 10, 5, '#ffd7a2'));
+    }
+
+    _roundedRectPath(x, y, width, height, radius) {
+        const ctx = this.ctx;
+        const r = Math.min(radius || 0, width / 2, height / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + width - r, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+        ctx.lineTo(x + width, y + height - r);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+        ctx.lineTo(x + r, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+    }
+
+    _drawRobotArm(x1, y1, x2, y2, direction) {
+        const ctx = this.ctx;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = '#243447';
+        ctx.lineWidth = 16;
+        ctx.stroke();
+        this._fillCircle(x2, y2, 24, '#9fb4c7');
+        ctx.strokeStyle = '#243447';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x2 + direction * 2, y2);
+        ctx.lineTo(x2 + direction * 28, y2 - 18);
+        ctx.moveTo(x2 + direction * 2, y2);
+        ctx.lineTo(x2 + direction * 28, y2 + 18);
+        ctx.stroke();
+    }
+
+    _drawRobotLeg(x, y) {
+        const ctx = this.ctx;
+        this._roundedRectPath(x - 22, y, 44, 54, 12);
+        ctx.fillStyle = '#71869a';
+        ctx.strokeStyle = '#243447';
+        ctx.lineWidth = 5;
+        ctx.fill();
+        ctx.stroke();
+        this._roundedRectPath(x - 38, y + 48, 76, 26, 12);
+        ctx.fillStyle = '#9fb4c7';
+        ctx.fill();
+        ctx.stroke();
+    }
+
+    _drawCloud(x, y, scale = 1) {
+        const ctx = this.ctx;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
+        ctx.beginPath();
+        ctx.ellipse(-42, 14, 42, 24, 0, 0, Math.PI * 2);
+        ctx.ellipse(-12, -2, 38, 32, 0, 0, Math.PI * 2);
+        ctx.ellipse(28, 10, 46, 26, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    _drawWindow(x, y) {
+        const ctx = this.ctx;
+        this._roundedRectPath(x, y, 58, 50, 8);
+        ctx.fillStyle = '#9be7ff';
+        ctx.strokeStyle = '#3d2b1f';
+        ctx.lineWidth = 4;
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x + 29, y + 2);
+        ctx.lineTo(x + 29, y + 48);
+        ctx.moveTo(x + 2, y + 25);
+        ctx.lineTo(x + 56, y + 25);
+        ctx.stroke();
+    }
+
+    _drawTree(x, y, scale = 1) {
+        const ctx = this.ctx;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+        ctx.fillStyle = '#7a4a2b';
+        ctx.fillRect(-14, 40, 28, 72);
+        ctx.fillStyle = '#2f8f4e';
+        this._fillCircle(0, 18, 48, '#2f8f4e');
+        this._fillCircle(-34, 42, 36, '#3fad5f');
+        this._fillCircle(35, 42, 38, '#38a85a');
+        ctx.restore();
+    }
+
     // ===== 样式控制 =====
 
     setStyle(params = {}) {
@@ -515,6 +947,9 @@ class DrawEngine {
                         break;
                     case 'draw_path':
                         this.drawPath(params.segments, params.color, params.fill, params.fill_color, params.width, params.close);
+                        break;
+                    case 'draw_template':
+                        this.drawTemplate(params.name, params);
                         break;
                     case 'set_style':
                         this.setStyle(params);

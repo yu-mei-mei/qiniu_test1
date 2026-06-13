@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from .asr import transcribe_audio
+from .canvas_templates import match_canvas_template
 from .command_parser import parse_command
 from .image_generator import classify_draw_route, generate_image
 
@@ -42,6 +43,17 @@ async def health_check():
 @app.post("/api/parse")
 async def parse_instruction(req: ParseRequest):
     """将自然语言指令解析为结构化绘图命令"""
+    template = match_canvas_template(req.text)
+    if template:
+        return {
+            "commands": [
+                {"action": "draw_template", "params": {"name": template["name"]}}
+            ],
+            "draw_mode": "canvas_template",
+            "route_reason": f"命中 Canvas 模板：{template['label']}",
+            "tts": template["tts"],
+        }
+
     result = parse_command(req.text)
     result["draw_mode"] = "canvas"
     result["route_reason"] = "文本解析接口默认返回 Canvas 绘图命令"
@@ -86,6 +98,18 @@ async def parse_voice(file: UploadFile = File(...)):
             "route_reason": "语音识别结果为空",
             "tts": asr_result.get("message", "没有听清楚，请再说一遍"),
             "error": asr_result.get("error", "empty_transcript"),
+        }
+
+    template = match_canvas_template(text)
+    if template:
+        return {
+            "text": text,
+            "commands": [
+                {"action": "draw_template", "params": {"name": template["name"]}}
+            ],
+            "draw_mode": "canvas_template",
+            "route_reason": f"命中 Canvas 模板：{template['label']}",
+            "tts": template["tts"],
         }
 
     route = classify_draw_route(text)
